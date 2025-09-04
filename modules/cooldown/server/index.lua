@@ -1,9 +1,10 @@
---- @type table<string, table<string, integer>>
+--- @alias SURELIB.COOLDOWN.STRUCT table<string, table<string, any>>
+--- @type SURELIB.COOLDOWN.STRUCT
 local data = {}
---- @type table<string, table<string, any>>
+--- @type SURELIB.COOLDOWN.STRUCT
 local initialData = {}
 local app = {}
---- @type table<string, table<string, integer>>
+--- @type SURELIB.COOLDOWN.STRUCT
 local stackZero = {}
 
 --- @param namespace string
@@ -90,6 +91,8 @@ end)
 
 --- @param namespace string
 --- @param initialCooldown number
+--- @param afterSetCooldown integer
+--- @param stackOnZeroToRemove integer?
 function app.SETUP_INITIAL_DATA(namespace, initialCooldown, afterSetCooldown, stackOnZeroToRemove)
 	lib.print.info(('Set initial data namespace=%s'):format(namespace))
 

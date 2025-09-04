@@ -1,4 +1,4 @@
---- @type table<string, table<string, integer>>
+--- @type SURELIB.COOLDOWN.STRUCT
 local data = {}
 local app = {}
 
@@ -65,7 +65,7 @@ function app.ON_READY(cb)
 	app.on_ready_cb = cb
 end
 
---- @return table<string, table<string, integer>>
+--- @return SURELIB.COOLDOWN.STRUCT
 function app.GET_DATA()
 	return data
 end
