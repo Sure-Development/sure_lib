@@ -3,6 +3,7 @@ local data = {}
 --- @type table<string, table<string, any>>
 local initialData = {}
 local app = {}
+--- @type table<string, table<string, integer>>
 local stackZero = {}
 
 --- @param namespace string
@@ -51,6 +52,7 @@ RegisterNetEvent(('%s:lib:cooldownSet'):format(cache.resource), function(namespa
 	TriggerClientEvent(('%s:lib:cooldownSet'):format(cache.resource), -1, namespace, coords, cooldown)
 end)
 
+--- @param resource string
 AddEventHandler('onResourceStart', function(resource)
 	if resource == cache.resource then
 		lib.print.info('ev=onResourceStart action=startTimer')

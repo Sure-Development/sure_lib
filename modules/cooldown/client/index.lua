@@ -65,6 +65,7 @@ function app.ON_READY(cb)
 	app.on_ready_cb = cb
 end
 
+--- @return table<string, table<string, integer>>
 function app.GET_DATA()
 	return data
 end
