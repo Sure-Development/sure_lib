@@ -11,6 +11,9 @@ files {
 	--- Cooldown
 	'modules/cooldown/client/index.lua',
 	'modules/cooldown/server/index.lua',
+
+	--- Validator
+	'modules/validator/shared/index.lua'
 }
 
 dependencies {
