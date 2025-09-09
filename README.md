@@ -4,12 +4,16 @@ Open Source - Library that will help your manage your resource or handle your sc
 In this version (1.0.0-alpha) we are currently working on the new features.
 and we don't have official documentation yet.
 
+## Core Features
+- Cooldown (Make all players in server receive same timer)
+- Schema Validation
+
 ## Dependencies
 
 - [ox_lib](https://github.com/overextended/ox_lib)
 - [es_extended](https://github.com/esx-framework/esx_core)
 
-## Basic Usage
+## Basic Usage (Cooldown)
 
 ```lua
 --- server.lua
@@ -43,4 +47,35 @@ lLib.ON_READY(function()
 		end
 	end
 end)
+```
+
+## Basic Usage (Schema Validation)
+
+```lua
+local v = require '@sure_lib/modules/validator/index'
+
+local testSchema = v.object({
+    second = v.object({
+        third = v.object({
+            fourth = v.string().required()
+        })
+    })
+})
+local testData = {
+    second = {
+        third = {
+            fourth = 'string'
+        }
+    }
+}
+
+local success, message = pcall(function()
+    testSchema.parse(testData)
+end)
+
+if success then
+    print('Validation successful!')
+else
+    print('Validation failed:', message)
+end
 ```
