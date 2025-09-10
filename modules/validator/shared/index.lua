@@ -1,7 +1,15 @@
 local app = {}
 
+--- @alias SURELIB.VALIDATOR.TYPES 'object'
+--- | 'array'
+--- | 'string'
+--- | 'number'
+--- | 'boolean'
+--- | 'function'
 local valid_types = { 'object', 'array', 'string', 'number', 'boolean', 'function' }
 
+--- @param value SURELIB.VALIDATOR.TYPES
+--- @return boolean
 local function isValidTypes(value)
     for _, validType in ipairs(valid_types) do
         if validType == value then
@@ -11,12 +19,15 @@ local function isValidTypes(value)
     return false
 end
 
+--- @param condition boolean
+--- @param message string
 local function customAssert(condition, message)
     if not condition then
         error('Validation Error: ' .. message, 2)
     end
 end
 
+--- @param targetType SURELIB.VALIDATOR.TYPES
 function app.createInstance(targetType)
     customAssert(isValidTypes(targetType), 'Incorrect type for creating instance: ' .. tostring(targetType))
 
