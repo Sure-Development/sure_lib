@@ -52,7 +52,7 @@ end)
 ## Basic Usage (Schema Validation)
 
 ```lua
-local v = require '@sure_lib/modules/validator/index'
+local v = require '@sure_lib/modules/validator/shared/index'
 
 local testSchema = v.object({
     second = v.object({
