@@ -1,7 +1,7 @@
 # sure_lib
 
 Open Source - Library that will help your manage your resource or handle your script as a controller
-In this version (1.1.0-alpha) we are currently working on the new features.
+In this version (1.1.1-alpha) we are currently working on the new features.
 and we don't have official documentation yet.
 
 ## Core Features
