@@ -12,19 +12,7 @@ server_scripts {
 }
 
 files {
-	--- Cooldown
-	'modules/cooldown/client/index.lua',
-	'modules/cooldown/server/index.lua',
-
-	--- Validator
-	'modules/validator/shared/index.lua',
-
-	--- ESX
-	'modules/esx/client/index.lua',
-
-	--- Track
-	'modules/track/shared/index.lua',
-
+	'modules/**/*/index.lua',
 	'imports/shared.lua'
 }
 
