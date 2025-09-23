@@ -1,6 +1,7 @@
 local esx = {}
 local playerLoaded = promise.new()
 local itemIndexes = {}
+local accountIndexes = {}
 
 CreateThread(function(threadId)
     while not ESX.IsPlayerLoaded() do
@@ -31,6 +32,24 @@ function esx.GetItem(name)
     end
 
     return inventory[index]
+end
+
+--- @param name string
+--- @return ESXPlayerAccount?
+function esx.GetAccount(name)
+    local index = accountIndexes[name]
+    local accounts = ESX.GetPlayerData().accounts
+    if index == nil then
+        for k, v in ipairs(accounts) do
+            if v.name == name then
+                accountIndexes[name] = k
+                index = k
+                break
+            end
+        end
+    end
+
+    return accountIndexes[index]
 end
 
 return esx
