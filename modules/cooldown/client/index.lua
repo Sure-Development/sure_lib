@@ -36,7 +36,7 @@ end)
 --- @param namespace string
 --- @param coords vector3
 --- @return integer
-function app.GET_COOLDOWN(namespace, coords)
+function app.GetCooldown(namespace, coords)
 	local index = generateIndex(namespace, coords)
 
 	if data[namespace] == nil then
@@ -56,17 +56,17 @@ end
 --- @param namespace string
 --- @param coords vector3
 --- @param cooldown integer?
-function app.SET_COOLDOWN(namespace, coords, cooldown)
+function app.SetCooldown(namespace, coords, cooldown)
 	TriggerServerEvent(('%s:lib:cooldownSet'):format(cache.resource), namespace, coords, cooldown)
 end
 
 --- @param cb fun()
-function app.ON_READY(cb)
+function app.OnReady(cb)
 	app.on_ready_cb = cb
 end
 
 --- @return SURELIB.COOLDOWN.STRUCT
-function app.GET_DATA()
+function app.GetData()
 	return data
 end
 

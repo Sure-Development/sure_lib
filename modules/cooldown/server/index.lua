@@ -93,7 +93,7 @@ end)
 --- @param initialCooldown number
 --- @param afterSetCooldown integer
 --- @param stackOnZeroToRemove integer?
-function app.SETUP_INITIAL_DATA(namespace, initialCooldown, afterSetCooldown, stackOnZeroToRemove)
+function app.SetupInitialData(namespace, initialCooldown, afterSetCooldown, stackOnZeroToRemove)
 	lib.print.info(('Set initial data namespace=%s'):format(namespace))
 
 	initialData[namespace] = {

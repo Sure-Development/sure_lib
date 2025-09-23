@@ -36,12 +36,12 @@ function app.createInstance(targetType)
         __required = false
     }
 
-    function instance.required()
+    function instance.Required()
         instance.__required = true
         return instance
     end
 
-    function instance.parse(data)
+    function instance.Parse(data)
         if instance.__required and data == nil then
             customAssert(false, 'Required field is missing.')
         end
@@ -55,15 +55,13 @@ function app.createInstance(targetType)
             customAssert(receiveType == 'table', 'Expected type "object", but received "' .. receiveType .. '".')
             for name, fieldSchema in pairs(instance.fields) do
                 local fieldData = data[name]
-                fieldSchema.parse(fieldData)
+                fieldSchema.Parse(fieldData)
             end
             return true
         elseif instance.type == 'array' then
-            print(data, receiveType)
             customAssert(receiveType == 'table', 'Expected type "array", but received "' .. receiveType .. '".')
             for _, item in ipairs(data) do
-                print('item', item, instance.ref.type)
-                instance.ref.parse(item)
+                instance.ref.Parse(item)
             end
             return true
         else
@@ -75,7 +73,7 @@ function app.createInstance(targetType)
     return instance
 end
 
-function app.object(schema)
+function app.Object(schema)
     local instance = app.createInstance('object')
     instance.fields = {}
     customAssert(type(schema) == 'table', 'Object schema must be a table.')
@@ -86,26 +84,26 @@ function app.object(schema)
     return instance
 end
 
-function app.array(refClass)
+function app.Array(refClass)
     local instance = app.createInstance('array')
     customAssert(type(refClass) == 'table' and refClass.parse ~= nil, 'Array schema requires a valid schema class.')
     instance.ref = refClass
     return instance
 end
 
-function app.string()
+function app.String()
     return app.createInstance('string')
 end
 
-function app.number()
+function app.Number()
     return app.createInstance('number')
 end
 
-function app.boolean()
+function app.Boolean()
     return app.createInstance('boolean')
 end
 
-function app.fn()
+function app.Fn()
     return app.createInstance('function')
 end
 

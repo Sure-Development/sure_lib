@@ -1,7 +1,7 @@
 # sure_lib
 
 Open Source - Library that will help your manage your resource or handle your script as a controller
-In this version (1.1.3) we are currently working on the new features.
+In this version (1.1.4) we are currently working on the new features.
 and we don't have official documentation yet.
 
 ## Core Features
@@ -29,8 +29,8 @@ local reactive = GetModule('Track')
 
 esx.WaitPlayerLoaded()
 
-print(cooldown.GET_COOLDOWN(namespace, coords))
-print(validator.string().parse('hello'))
+print(cooldown.GetCooldown(namespace, coords))
+print(validator.String().Parse('hello'))
 
 --- Reactive System
 local d, setD = reactive.Track('d', 500)
@@ -49,7 +49,7 @@ setD(600) --- d has updated to 600
 --- server.lua
 local lLib = GetModule('Cooldown')
 
-lLib.SETUP_INITIAL_DATA(
+lLib.SetupInitialData(
 	--[[ namespace ]]                                    'your_namespace_like_robbery',
 	--[[ initial cooldown (ms) ]]                        5000,
 	--[[ after set or reset cooldown (ms) ]]             10000,
@@ -62,18 +62,18 @@ lLib.SETUP_INITIAL_DATA(
 local lLib = GetModule('Cooldown')
 local namespace = 'your_namespace_like_robbery'
 
-lLib.ON_READY(function()
+lLib.OnReady(function()
 	local coords = vec3(0.0, 0.0, 0.0)
 
 	while true do
 		Wait(1000)
-		local cooldown = lLib.GET_COOLDOWN(namespace, coords)
+		local cooldown = lLib.GetCooldown(namespace, coords)
 		print('Cooldown is', cooldown)
 
 		if cooldown == 0 then
 			print('This is a zero then wait 2 seconds to reset cooldown')
 			Wait(2000)
-			lLib.SET_COOLDOWN(namespace, coords)
+			lLib.SetCooldown(namespace, coords)
 		end
 	end
 end)
@@ -84,10 +84,10 @@ end)
 ```lua
 local v = GetModule('Validator')
 
-local testSchema = v.object({
-    second = v.object({
-        third = v.object({
-            fourth = v.string().required()
+local testSchema = v.Object({
+    second = v.Object({
+        third = v.Object({
+            fourth = v.String().Required()
         })
     })
 })
@@ -100,7 +100,7 @@ local testData = {
 }
 
 local success, message = pcall(function()
-    testSchema.parse(testData)
+    testSchema.Parse(testData)
 end)
 
 if success then
