@@ -10,7 +10,7 @@ and we don't have official documentation yet. (You can see functions declaration
 - Cooldown (Make all players in server receive same timer)
 - Schema Validation
 - ESX-Modern Utility Functions
-- Track - Reactive system (React-like in lua)
+- Track - Reactive system (RippleJS-like in lua)
 
 ## Dependencies
 
