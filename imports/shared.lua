@@ -16,6 +16,7 @@ local pathAliases = {
     ['ESX'] = generatePath('esx', 'index'),
     ['Cooldown'] = generatePath('cooldown', 'index'),
     ['Validator'] = generatePath('validator', 'index'),
+    ['Track'] = '@sure_lib.modules.track.shared.index'
 }
 
 --- @param name SURELIB.IMPORTS.MODULES
