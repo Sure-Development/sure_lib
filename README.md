@@ -25,11 +25,22 @@ shared_script '@sure_lib/imports/shared.lua'
 local esx = GetModule('ESX')
 local cooldown = GetModule('Cooldown')
 local validator = GetModule('Validator')
+local reactive = GetModule('Track')
 
 esx.WaitPlayerLoaded()
 
 print(cooldown.GET_COOLDOWN(namespace, coords))
 print(validator.string().parse('hello'))
+
+--- Reactive System
+local d, setD = reactive.Track('d', 500)
+
+reactive.Effect(function()
+	print('d has updated to', d())
+end, { d })
+
+print('Initial d is', d()) --- Initial d is 500
+setD(600) --- d has updated to 600
 ```
 
 ## Basic Usage (Cooldown)
