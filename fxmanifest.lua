@@ -3,7 +3,7 @@ game 'gta5'
 
 name 'Lib'
 description 'Sure (Lib)'
-version '1.1.1-alpha'
+version '1.1.2'
 lua54 'yes'
 use_experimental_fxv2_oal 'yes'
 
@@ -13,7 +13,12 @@ files {
 	'modules/cooldown/server/index.lua',
 
 	--- Validator
-	'modules/validator/shared/index.lua'
+	'modules/validator/shared/index.lua',
+
+	--- ESX
+	'modules/esx/client/index.lua',
+
+	'imports/shared.lua'
 }
 
 dependencies {
