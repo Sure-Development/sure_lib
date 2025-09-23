@@ -7,6 +7,10 @@ version '1.1.4'
 lua54 'yes'
 use_experimental_fxv2_oal 'yes'
 
+server_scripts {
+	'resources/server/**/*.lua'
+}
+
 files {
 	--- Cooldown
 	'modules/cooldown/client/index.lua',
