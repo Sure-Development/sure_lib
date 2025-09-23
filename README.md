@@ -1,7 +1,7 @@
 # sure_lib
 
 Open Source - Library that will help your manage your resource or handle your script as a controller
-In this version (1.1.1-alpha) we are currently working on the new features.
+In this version (1.1.2) we are currently working on the new features.
 and we don't have official documentation yet.
 
 ## Core Features
@@ -13,11 +13,30 @@ and we don't have official documentation yet.
 - [ox_lib](https://github.com/overextended/ox_lib)
 - [es_extended](https://github.com/esx-framework/esx_core)
 
+## Autoloader
+Aliases that can be called `ESX`, `Cooldown`, `Validator`
+```lua
+--- fxmanifest.lua
+shared_script '@sure_lib/imports/shared.lua'
+```
+
+```lua
+--- client.lua
+local esx = GetModule('ESX')
+local cooldown = GetModule('Cooldown')
+local validator = GetModule('Validator')
+
+esx.WaitPlayerLoaded()
+
+print(cooldown.GET_COOLDOWN(namespace, coords))
+print(validator.string().parse('hello'))
+```
+
 ## Basic Usage (Cooldown)
 
 ```lua
 --- server.lua
-local lLib = require '@sure_lib/modules/cooldown/server/index'
+local lLib = GetModule('Cooldown')
 
 lLib.SETUP_INITIAL_DATA(
 	--[[ namespace ]]                                    'your_namespace_like_robbery',
@@ -29,7 +48,7 @@ lLib.SETUP_INITIAL_DATA(
 
 ```lua
 --- client.lua
-local lLib = require '@sure_lib/modules/cooldown/client/index'
+local lLib = GetModule('Cooldown')
 local namespace = 'your_namespace_like_robbery'
 
 lLib.ON_READY(function()
@@ -52,7 +71,7 @@ end)
 ## Basic Usage (Schema Validation)
 
 ```lua
-local v = require '@sure_lib/modules/validator/shared/index'
+local v = GetModule('Validator')
 
 local testSchema = v.object({
     second = v.object({
