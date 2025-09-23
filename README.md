@@ -1,9 +1,11 @@
 ![sure_lib](https://i.ibb.co/nNdSy1qn/Annotation-2025-09-23-184925.png)
 
-# sure_lib
+# sure_lib (Modern-First lua of FiveM Scripting)
 
 Open Source - Library that will help your manage your resource or handle your script as a controller
+
 In this version (1.2) we are currently working on the new features.
+
 and we don't have official documentation yet. (You can see functions declaration in each files of our resource)
 
 ## Core Features
@@ -18,7 +20,11 @@ and we don't have official documentation yet. (You can see functions declaration
 - [es_extended](https://github.com/esx-framework/esx_core)
 
 ## Autoloader
-Aliases that can be called `ESX`, `Cooldown`, `Validator`
+Aliases that can be called
+- `ESX`
+- `Cooldown`
+- `Validator`
+- `Track`
 ```lua
 --- fxmanifest.lua
 shared_script '@sure_lib/imports/shared.lua'
@@ -51,9 +57,9 @@ setD(600) --- d has updated to 600
 
 ```lua
 --- server.lua
-local lLib = GetModule('Cooldown')
+local cooldown = GetModule('Cooldown')
 
-lLib.SetupInitialData(
+cooldown.SetupInitialData(
 	--[[ namespace ]]                                    'your_namespace_like_robbery',
 	--[[ initial cooldown (ms) ]]                        5000,
 	--[[ after set or reset cooldown (ms) ]]             10000,
