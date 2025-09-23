@@ -3,12 +3,14 @@
 # sure_lib
 
 Open Source - Library that will help your manage your resource or handle your script as a controller
-In this version (1.1.4) we are currently working on the new features.
-and we don't have official documentation yet.
+In this version (1.2) we are currently working on the new features.
+and we don't have official documentation yet. (You can see functions declaration in each files of our resource)
 
 ## Core Features
 - Cooldown (Make all players in server receive same timer)
 - Schema Validation
+- ESX-Modern Utility Functions
+- Track - Reactive system (React-like in lua)
 
 ## Dependencies
 
@@ -61,21 +63,21 @@ lLib.SetupInitialData(
 
 ```lua
 --- client.lua
-local lLib = GetModule('Cooldown')
+local cooldown = GetModule('Cooldown')
 local namespace = 'your_namespace_like_robbery'
 
-lLib.OnReady(function()
+cooldown.OnReady(function()
 	local coords = vec3(0.0, 0.0, 0.0)
 
 	while true do
 		Wait(1000)
-		local cooldown = lLib.GetCooldown(namespace, coords)
+		local cooldown = cooldown.GetCooldown(namespace, coords)
 		print('Cooldown is', cooldown)
 
 		if cooldown == 0 then
 			print('This is a zero then wait 2 seconds to reset cooldown')
 			Wait(2000)
-			lLib.SetCooldown(namespace, coords)
+			cooldown.SetCooldown(namespace, coords)
 		end
 	end
 end)
