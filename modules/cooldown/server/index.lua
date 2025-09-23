@@ -70,13 +70,12 @@ AddEventHandler('onResourceStart', function(resource)
 						end
 					elseif cooldown == 0 then
 						if
-								initialData[namespace].stackOnZeroToRemove ~= nil
-								and stackZero[namespace][index] == initialData[namespace].stackOnZeroToRemove
+							initialData[namespace].stackOnZeroToRemove ~= nil
+							and stackZero[namespace][index] == initialData[namespace].stackOnZeroToRemove
 						then
 							stackZero[namespace][index] = 0
 							data[namespace][index] = initialData[namespace].afterSetCooldown
-							TriggerClientEvent(('%s:lib:cooldownSetByIndex'):format(cache.resource), -1, namespace, index,
-								data[namespace][index])
+							TriggerClientEvent(('%s:lib:cooldownSetByIndex'):format(cache.resource), -1, namespace, index, data[namespace][index])
 						end
 
 						stackZero[namespace][index] += 1
