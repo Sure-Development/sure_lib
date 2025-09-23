@@ -8,15 +8,20 @@ end
 
 --- @param module string
 --- @param file string
-local generatePath = function(module, file)
-    return ('@sure_lib.modules.%s.%s.%s'):format(module, namespace, file)
+--- @param customNamespace string?
+local generatePath = function(module, file, customNamespace)
+    if customNamespace == nil then
+        customNamespace = namespace
+    end
+
+    return ('@sure_lib.modules.%s.%s.%s'):format(module, customNamespace, file)
 end
 
 local pathAliases = {
     ['ESX'] = generatePath('esx', 'index'),
     ['Cooldown'] = generatePath('cooldown', 'index'),
     ['Validator'] = generatePath('validator', 'index'),
-    ['Track'] = '@sure_lib.modules.track.shared.index'
+    ['Track'] = generatePath('track', 'index', 'shared')
 }
 
 --- @param name SURELIB.IMPORTS.MODULES
