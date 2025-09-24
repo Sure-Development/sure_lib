@@ -88,10 +88,12 @@ AddEventHandler('onResourceStart', function(resource)
 	end
 end)
 
---- @param namespace string
---- @param initialCooldown number
---- @param afterSetCooldown integer
---- @param stackOnZeroToRemove integer?
+--- Sets up initial data for cooldown management
+--- This function initializes the cooldown data for a specific namespace with configuration parameters
+--- @param namespace string The unique identifier for the cooldown group
+--- @param initialCooldown number The initial cooldown duration to be applied
+--- @param afterSetCooldown integer The cooldown duration to be applied after the initial cooldown
+--- @param stackOnZeroToRemove integer? Optional parameter to specify how many stacks to remove when cooldown reaches zero
 function app.SetupInitialData(namespace, initialCooldown, afterSetCooldown, stackOnZeroToRemove)
 	lib.print.info(('Set initial data namespace=%s'):format(namespace))
 

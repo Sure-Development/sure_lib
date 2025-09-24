@@ -1,5 +1,8 @@
 --- @alias SURELIB.IMPORTS.MODULES
 --- | 'ESX'
+--- | 'Cooldown'
+--- | 'Validator'
+--- | 'Track'
 
 local namespace = 'client'
 if IsDuplicityVersion() then
@@ -24,8 +27,10 @@ local pathAliases = {
     ['Track'] = generatePath('track', 'index', 'shared')
 }
 
---- @param name SURELIB.IMPORTS.MODULES
---- @return any
+--- Gets a module from the pathAliases table by its name
+--- This function looks up a module path in the pathAliases table and requires it
+--- @param name SURELIB.IMPORTS.MODULES The name/identifier of the module to retrieve
+--- @return any The required module if found, nil otherwise
 function GetModule(name)
     if pathAliases[name] then
         local modular = require(pathAliases[name])

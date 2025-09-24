@@ -33,9 +33,12 @@ RegisterNetEvent(('%s:lib:cooldownSetByIndex'):format(cache.resource), function(
 	data[namespace][index] = cooldown
 end)
 
---- @param namespace string
---- @param coords vector3
---- @return integer
+--- Returns the cooldown value for a specific namespace and coordinates
+--- @description Retrieves or initializes a cooldown value for a given namespace and location
+--- @param namespace string The namespace identifier for the cooldown
+--- @param coords vector3 The coordinates where the cooldown is applied
+--- @return integer The current cooldown value for the specified namespace and coordinates
+--- @note If the cooldown doesn't exist, it will be initialized through a server callback
 function app.GetCooldown(namespace, coords)
 	local index = generateIndex(namespace, coords)
 
@@ -53,19 +56,24 @@ function app.GetCooldown(namespace, coords)
 	return data[namespace][index]
 end
 
---- @param namespace string
---- @param coords vector3
---- @param cooldown integer?
+--- Sets a cooldown timer for a specific location
+--- @param namespace string The unique identifier for this cooldown
+--- @param coords vector3 The coordinates where the cooldown will be applied
+--- @param cooldown integer? Optional duration of the cooldown in milliseconds
 function app.SetCooldown(namespace, coords, cooldown)
 	TriggerServerEvent(('%s:lib:cooldownSet'):format(cache.resource), namespace, coords, cooldown)
 end
 
---- @param cb fun()
+--- OnReady sets a callback function to be executed when the application is ready
+--- Use this to initialize components that require the application to be fully loaded
+--- @param cb function The callback function to execute when ready
 function app.OnReady(cb)
 	app.on_ready_cb = cb
 end
 
---- @return SURELIB.COOLDOWN.STRUCT
+--- Gets the cooldown data structure.
+--- This function returns the internal cooldown data containing all active cooldowns and their states.
+--- @return SURELIB.COOLDOWN.STRUCT # The current cooldown data structure
 function app.GetData()
 	return data
 end
