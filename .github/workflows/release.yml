@@ -19,7 +19,7 @@ jobs:
         id: get_version
         shell: bash
         run: |
-          version=$(grep "version" fxmanifest.lua | awk -F"'" '{print $2}')
+          version=$(grep "version '" fxmanifest.lua | awk -F"'" '{print $2}')
           echo "Found version: $version"
           if [ ! -z "$version" ]; then
             echo "version=$version" >> "$GITHUB_OUTPUT"
