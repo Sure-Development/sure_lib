@@ -4,7 +4,7 @@
 
 Open Source - Library that will help your manage your resource or handle your script as a controller
 
-In this version (1.2) we are currently working on the new features.
+In this version (1.2.0) we are currently working on the new features.
 
 and we don't have official documentation yet. (You can see functions declaration in each files of our resource)
 
