@@ -17,9 +17,16 @@ jobs:
 
       - name: Get version from fxmanifest.lua
         id: get_version
+        shell: bash
         run: |
-          version=$(grep "version" fxmanifest.lua | grep -o "'.*'" | tr -d "'")
-          echo "version=$version" >> $GITHUB_OUTPUT
+          version=$(grep "version" fxmanifest.lua | awk -F"'" '{print $2}')
+          echo "Found version: $version"
+          if [ ! -z "$version" ]; then
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+          else
+            echo "Error: Version not found in fxmanifest.lua"
+            exit 1
+          fi
 
       - name: Create ZIP archive
         run: |
