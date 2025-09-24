@@ -33,6 +33,10 @@ local Effect = t.Effect
 local itemToAdd, setItemToAdd = Track('item', 'painkiller')
 local addAmount, setAddAmount = Track('amount', 0)
 
+esx.WaitPlayerLoaded()
+
+lib.print.info('Player Loaded')
+
 Effect(function()
     esx.AddItem(itemToAdd(), addAmount())
     print(itemToAdd(), addAmount())
