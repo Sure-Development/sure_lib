@@ -4,7 +4,7 @@
 
 Open Source - Library that will help your manage your resource or handle your script as a controller
 
-In this version (1.2.0) we are currently working on the new features.
+In this version (1.2.1) we are currently working on the new features.
 
 and we don't have official documentation yet. (You can see functions declaration in each files of our resource)
 
@@ -13,6 +13,7 @@ and we don't have official documentation yet. (You can see functions declaration
 - Schema Validation
 - ESX-Modern Utility Functions
 - Track - Reactive system (RippleJS-like in lua)
+- Listener Event (with Parameters Validation)
 
 ## Dependencies
 
@@ -25,6 +26,7 @@ Aliases that can be called
 - `Cooldown`
 - `Validator`
 - `Track`
+- `Listener`
 ```lua
 --- fxmanifest.lua
 shared_script '@sure_lib/imports/shared.lua'
@@ -36,6 +38,16 @@ local esx = GetModule('ESX')
 local cooldown = GetModule('Cooldown')
 local validator = GetModule('Validator')
 local reactive = GetModule('Track')
+local listener = GetModule('Listener')
+
+listener
+	:Local('say', function(prefix, suffix)
+		print(prefix, suffix)
+	end)
+	.AddParams(validator.String().Required(), validator.String().Required())
+
+TriggerEvent('say', 'hello', 'world') --- Works
+TriggerEvent('say', 1, 2) --- Error!
 
 esx.WaitPlayerLoaded()
 
