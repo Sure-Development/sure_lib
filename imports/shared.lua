@@ -3,6 +3,7 @@
 --- | 'Cooldown'
 --- | 'Validator'
 --- | 'Track'
+--- | 'Listener'
 
 local namespace = 'client'
 if IsDuplicityVersion() then
@@ -23,8 +24,9 @@ end
 local pathAliases = {
     ['ESX'] = generatePath('esx', 'index'),
     ['Cooldown'] = generatePath('cooldown', 'index'),
-    ['Validator'] = generatePath('validator', 'index'),
-    ['Track'] = generatePath('track', 'index', 'shared')
+    ['Validator'] = generatePath('validator', 'index', 'shared'),
+    ['Track'] = generatePath('track', 'index', 'shared'),
+    ['Listener'] = generatePath('listener', 'index', 'shared'),
 }
 
 --- Gets a module from the pathAliases table by its name
