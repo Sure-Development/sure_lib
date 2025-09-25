@@ -41,6 +41,8 @@ local reactive = GetModule('Track')
 local listener = GetModule('Listener')
 
 listener
+	--- on local event call `Local`
+	--- on net event call   `Net`
 	:Local('say', function(prefix, suffix)
 		print(prefix, suffix)
 	end)
