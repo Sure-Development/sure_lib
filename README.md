@@ -46,7 +46,10 @@ listener
 	:Local('say', function(prefix, suffix)
 		print(prefix, suffix)
 	end)
-	.AddParams(validator.String().Required(), validator.String().Required())
+	.AddParams(
+		validator.String().Required(),
+		validator.String().Required()
+	)
 
 TriggerEvent('say', 'hello', 'world') --- Works
 TriggerEvent('say', 1, 2) --- Error!
