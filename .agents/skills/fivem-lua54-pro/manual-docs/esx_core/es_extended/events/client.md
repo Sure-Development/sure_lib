@@ -1,0 +1,199 @@
+# Clientsided Events
+This page is dedicated to the client events introduced by the es_extended script.
+
+## Event Triggers
+**Info**
+    These events can be triggered by any scripts. 
+
+## Event Handlers
+**Warning**
+    These events can only be listened to and should **not** be triggered. If done eitherway **will** break scripts.
+
+### esx:addInventoryItem
+This event gets triggered when the player has received an item. *This is a server triggered event*
+
+**Returns**
+- itemName: `string`
+  - The name of the item.
+- count: `number`
+  - The amount of the item.
+
+**Example**
+```lua 
+RegisterNetEvent('esx:addInventoryItem', function(item, count)
+  print(string.format('You have received %sx %s', count, item))
+end)
+```
+
+### esx:playerLoaded
+This event gets triggered when the player has finished loading
+
+**Arguments**
+- xPlayer: `table`
+  - The player object.
+- skin: `table`
+  - The player's skin.
+
+**Example**
+```lua
+RegisterNetEvent('esx:playerLoaded', function (xPlayer, skin)
+    print("The character " .. xPlayer.name .. " successfully loaded")
+end)
+```
+
+### esx:onPlayerDeath
+This event gets triggered when the player hdies
+
+**Data**
+- victimCoords: `vector3`
+  - The coords of the victim.
+- killerCoords: `vector3`
+  - The coords of the killer.
+- distance: `number`
+  - The distance between the victim and the killer.
+- killedByPlayer: `boolean`
+  - Is the killer a player.
+- deathCause: `string`
+  - The death cause.
+- killerServerId: `number`
+  - The killer's server id.
+- killerClientId: `string`
+  - The killer's local id.
+
+
+**Example**
+```lua
+AddEventHandler('esx:onPlayerDeath', function (data)
+    print(string.format("You were killed by %s from %s meters away.", data.killerServerId, data.distance))
+end)
+```
+
+### esx:playerJumping
+This is a listen only event and should not be triggered. This event gets triggered when the player jumps.
+
+**Example**
+```lua 
+AddEventHandler('esx:playerJumping', function()
+    print("The player is jumping")
+end)
+```
+
+### esx:enteringVehicle
+This is a listen only event and should not be triggered. This event gets triggered when the player is entering a vehicle.
+
+**Returns**
+- vehicle: `number`
+  - The vehicle entity handle.
+- plate: `string`
+  - The vehicle's plate.
+- seat: `number`
+  - The seat index.
+- netId: `number`
+  - The vehicle's network id.
+
+**Example**
+```lua 
+AddEventHandler('esx:enteringVehicle', function(vehicle, plate, seat, netId)
+    local engineHealth = GetVehicleEngineHealth(vehicle)
+    print("Player is entering a vehicle with the plate: " .. plate .. "and with the engine health " .. engineHealth)
+end)
+```
+
+### esx:enteringVehicleAborted
+This is a listen only event and should not be triggered. This event gets triggered when the player has stopped entering a vehicle.
+
+**Example**
+```lua 
+AddEventHandler('esx:enteringVehicleAborted', function()
+    print("Player has stopped entering vehicle")
+end)
+```
+
+### esx:enteredVehicle
+This is a listen only event and should not be triggered. This event gets triggered when the player has succesfully entered a vehicle.
+
+**Returns**
+- vehicle: `number`
+  - The vehicle entity handle.
+- plate: `string`
+  - The vehicle's plate.
+- seat: `number`
+  - The seat the player entered.
+- displayName: `string`
+  - The vehicle's display name.
+- netId: `number`
+  - The vehicle's network id.
+
+**Example**
+```lua 
+AddEventHandler('esx:enteredVehicle', function(vehicle, plate, seat, displayName, netId)
+    local engineHealth = GetVehicleEngineHealth(vehicle)
+    print("Player has entered a " .. displayName .. " with the engine health " .. engineHealth)
+end)
+```
+
+### esx:exitedVehicle
+This is a listen only event and should not be triggered. This event gets triggered when the player has exited a vehicle.
+
+**Returns**
+- vehicle: `number`
+  - The vehicle entity handle.
+- plate: `string`
+  - The vehicle's plate.
+- seat: `number`
+  - The seat the player exited.
+- displayName: `string`
+  - The vehicle's display name.
+- netId: `number`
+  - The vehicle's network id.
+
+**Example**
+```lua 
+AddEventHandler('esx:exitedVehicle', function(vehicle, plate, seat, displayName, netId)
+    print("Player has exited an " .. displayName .. " from the seat with the index: " .. seat)
+end)
+```
+
+### esx:pauseMenuActive
+This event gets triggered when the player hdies
+
+**Data**
+- isPauseMenu: `boolean`
+  - Is the pause menu active.
+
+**Example**
+```lua
+AddEventHandler('esx:pauseMenuActive', function (isPauseMenu)
+    if isPauseMenu then
+        print("Player opened his pause menu")
+    else
+        print("Player closed his pause menu")
+    end
+end)
+```
+
+### esx:onPlayerSpawn
+This event gets triggered when the player spawns
+
+**Example**
+```lua
+AddEventHandler('esx:onPlayerSpawn', function ()
+    print("Player successfully loaded and his ped spawned.")
+end)
+```
+
+### esx:setJob
+This event is triggered when the player's job changes.
+
+**Returns**
+    
+
+**See more:** *[Job table structure](/en/esx_core/es_extended/playerdata/#job)*
+
+**Example**
+```lua
+RegisterNetEvent("esx:setJob") 
+AddEventHandler('esx:setJob', function(job,lastJob)
+    print("Player changed job! New job name: " .. job.name .. " Last job name: " .. lastJob.name)
+end)
+```

@@ -1,0 +1,75 @@
+# esx_progressbar 
+The Progress bar system used by `es_extended`
+**Only available on clientside**
+
+### ESX.Progressbar
+Display a progressbar
+
+**Arguments** 
+- text: `string`
+  - The text on the progressbar.
+- length: `number`
+  - The lenght of the progressbar in ms
+- Options: `table`
+  - The progressbar options
+  - animation: `table`
+    - A table with animation data
+    - type: `string`
+      - anim or scenario
+    - lib: `string` 
+      - The animation lib
+    - dict: `string`
+      - The animation dict
+  - FreezePlayer: `boolean`
+    - Should the player be frozen?
+  - onFinish: `function`
+    - A function that will be executed on finish
+  - onCancel: `function`
+    - A function that will be executed on cancel
+
+**ESX Example**
+```lua
+ESX.Progressbar('test', 25000,{
+    FreezePlayer = false, 
+    animation ={
+        type = 'anim',
+        dict = 'mini@prostitutes@sexlow_veh', 
+        lib ='low_car_sex_to_prop_p2_player' 
+    }, 
+    onFinish = function()
+        -- Code that should run when finished
+    end, onCancel = function() 
+        -- Code that should run when progressbar was cancelled
+    end
+})
+```
+
+**Export Example**
+```lua
+exports['esx_progressbar']:Progressbar('test', 25000, {
+    FreezePlayer = false, 
+    animation ={
+        type = 'anim',
+        dict = 'mini@prostitutes@sexlow_veh', 
+        lib ='low_car_sex_to_prop_p2_player' 
+    }, 
+    onFinish = function()
+        -- Code that should run when finished
+    end, onCancel = function() 
+        -- Code that should run when progressbar was cancelled
+    end
+})
+```
+
+### ESX.CancelProgressbar
+Cancel the current shown progressbar
+
+**ESX Example**
+```lua
+ESX.CancelProgressbar()
+```
+
+**Export Example**
+```lua
+exports['esx_progressbar']:CancelProgressbar()
+```

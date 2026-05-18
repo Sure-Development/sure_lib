@@ -1,0 +1,293 @@
+# Serversided Events
+This page is dedicated to the server events introduced by the es_extended script.
+
+## Event Triggers
+**Info**
+    These events can be triggered by any scripts. 
+
+## Event Handlers
+**Warning**
+    These events can only be listened to and should **not** be triggered. If done eitherway **will** break scripts.
+
+### esx:playerLoaded
+This event gets triggered when the player has successfully loaded / the character was chosen and loaded.
+
+**Arguments**
+- playerId: `number`
+  - The player's server id.
+- xPlayer: `table`
+  - The xPlayer object of the player that connected.
+- isNew: `boolean`
+  - Is the player's character new.
+
+**Example**
+```lua
+AddEventHandler('esx:playerLoaded', function (playerId, xPlayer, isNew)
+    if isNew then
+        print("The new character " .. xPlayer.getName() .. " successfully loaded with the playerId: " .. playerId)
+    else
+        print(xPlayer.getName() .. " successfully loaded with the playerId: " .. playerId)
+    end
+end)
+```
+
+### esx:playerLogout
+This event gets triggered when the player has logged out. This happens when a player used `/logout`
+
+**Arguments**
+- playerId: `number`
+  - The player's server id.
+
+**Example**
+```lua
+AddEventHandler('esx:playerLogout', function (playerId)
+    print(string.format("Player %s logged out.", playerId))
+end)
+```
+
+### esx:playerDropped
+This event gets triggered when the player disconnected.
+
+**Arguments**
+- playerId: `number`
+  - The player's server id.
+
+**Example**
+```lua
+AddEventHandler('esx:playerDropped', function (playerId)
+    print(string.format("Player %s disconnected out.", playerId))
+end)
+```
+
+### esx:playerLoaded
+This event gets triggered when the player has successfully loaded / the character was chosen and loaded.
+
+**Returns**
+- playerId: `number`
+  - The player's server id.
+- xPlayer: `table`
+  - The xPlayer object of the player that connected.
+- isNew: `boolean`
+  - Is the player's character new.
+
+```lua
+AddEventHandler('esx:playerLoaded', function (playerId, xPlayer, isNew)
+    if isNew then
+        print("The new character " .. xPlayer.getName() .. " successfully loaded with the playerId: " .. playerId)
+    else
+        print(xPlayer.getName() .. " successfully loaded with the playerId: " .. playerId)
+    end
+end)
+```
+
+### esx:playerJumping
+This event gets triggered when the player jumps. *This is a client triggered event*
+
+**Example**
+```lua 
+RegisterNetEvent('esx:playerJumping', function()
+    print("Player " .. source .. " is jumping")
+end)
+```
+
+### esx:enteringVehicle
+This event gets triggered when the player is entering a vehicle. *This is a client triggered event*
+
+**Returns**
+- plate: `string`
+  - The vehicle's plate.
+- seat: `number`
+  - The seat index of the vehicle the player is entering.
+- netId: `number`
+  - The vehicle's network id.
+
+**Example**
+```lua 
+RegisterNetEvent('esx:enteringVehicle', function(plate, seat, netId)
+    print("Player " .. source .. " is entering a vehicle with the plate: " .. plate)
+end)
+```
+
+### esx:enteringVehicleAborted
+This event gets triggered when the player has stopped entering a vehicle. *This is a client triggered event*
+
+**Example**
+```lua 
+RegisterNetEvent('esx:enteringVehicleAborted', function()
+    print("Player " .. source .. " has stopped entering vehicle")
+end)
+```
+
+### esx:enteredVehicle
+This event gets triggered when the player has succesfully entered a vehicle. *This is a client triggered event*
+
+**Returns**
+- plate: `string`
+  - The vehicle's plate.
+- seat: `number`
+  - The seat index of the vehicle the player is entering.
+- displayName: `string`
+  - The vehicle's display name.
+- netId: `number`
+  - The vehicle's network id.
+
+**Example**
+```lua 
+RegisterNetEvent('esx:enteredVehicle', function(plate, seat, displayName, netId)
+    print("Player " .. source .. " has entered an " .. displayName)
+end)
+```
+
+### esx:exitedVehicle
+This event gets triggered when the player has exited a vehicle. *This is a client triggered event*
+
+**Returns**
+- plate: `string`
+  - The vehicle's plate.
+- seat: `number`
+  - The seat index of the vehicle the player is entering.
+- displayName: `string`
+  - The vehicle's display name.
+- netId: `number`
+  - The vehicle's network id.
+
+**Example**
+```lua 
+RegisterNetEvent('esx:exitedVehicle', function(plate, seat, displayName, netId)
+    print("Player " .. source .. " has exited an " .. displayName .. " from the seat with the index: " .. seat)
+end)
+```
+
+### esx:updateWeaponAmmo
+Can be used to update weapon ammo or listen to ammo updates. *This is a client triggered event*
+
+**Returns**
+- weaponName: `string`
+  - The weapon name.
+- ammoCount: `number`
+  - The new ammo count.
+
+**Example**
+```lua 
+RegisterNetEvent('esx:updateWeaponAmmo', function(weaponName, ammoCount)
+    print("Player " .. source .. "'s " .. weaponName .. " new ammo count is: " .. ammoCount)
+end)
+```
+
+### esx:onAddInventoryItem
+Gets triggered when an inventory item gets added.
+
+**Returns**
+- source: `number`
+  - The player's server id.
+- itemName: `string`
+  - The item that got added.
+- itemCount: `number`
+  - The new item count.
+
+**Example**
+```lua 
+AddEventHandler('esx:onAddInventoryItem', function(source, itemName, itemCount)
+    local xPlayer = ESX.GetPlayerFromId(source)
+    print(xPlayer.getName() .. " received " .. itemName .. " and now has " .. itemCount)
+end)
+```
+
+### esx:onRemoveInventoryItem
+Gets triggered when an inventory item gets removed.
+
+**Returns**
+- source: `number`
+  - The player's server id.
+- itemName: `string`
+  - The item that got removed.
+- itemCount: `number`
+  - The new item count.
+
+**Example**
+```lua 
+AddEventHandler('esx:onRemoveInventoryItem', function(source, itemName, itemCount)
+    local xPlayer = ESX.GetPlayerFromId(source)
+    print(xPlayer.getName() .. " lost some " .. itemName .. " and now has " .. itemCount)
+end)
+```
+
+### esx:playerSaved
+Gets triggered when a single player was saved.
+
+**Returns**
+- source: `number`
+  - The player's server id.
+- xPlayer: `table`
+  - The xPlayer object of the player that was saved.
+
+**Example**
+```lua 
+AddEventHandler('esx:playerSaved', function(source, xPlayer)
+    print(xPlayer.getName() .. " was saved.")
+end)
+```
+
+### esx:onPlayerDeath
+This event gets triggered when the player dies
+
+**Data**
+- victimCoords: `vector3`
+  - The coords of the victim.
+- killerCoords: `vector3`
+  - The coords of the killer.
+- distance: `number`
+  - The distance between the victim and the killer.
+- killedByPlayer: `boolean`
+  - Is the killer a player.
+- deathCause: `string`
+  - The death cause.
+- killerServerId: `number`
+  - The killer's server id.
+- killerClientId: `string`
+  - The killer's local id.
+
+
+**Example**
+```lua
+RegisterNetEvent('esx:onPlayerDeath', function (data)
+    print(string.format("%s was killed by %s from %s meters away.", source, data.killerServerId, data.distance))
+end)
+```
+
+### esx:setJob
+This event is triggered when the player's job changes.
+
+**Returns**
+- source: `number`
+  - The player's server id.
+- job: `table`
+  - The new job table.
+- lastJob: `table`
+  - The last job table.
+
+**See more:** *[Job table structure](/en/esx_core/es_extended/playerdata/#job)*
+
+**Example**
+```lua 
+AddEventHandler('esx:setJob', function(source,job,lastJob)
+    print("Player " .. source .. " changed job! New job name: " .. job.name .. " Last job name: " .. lastJob.name)
+end)
+```
+
+### esx:jobsRefreshed
+This event is triggered when the jobs are refreshed.
+
+**See more:** [ESX.RefreshJobs()](/esx_core/es_extended/server/functions#refreshjobs)
+
+**Example**
+```lua 
+AddEventHandler('esx:jobsRefreshed', function()
+    local Job = 'police'
+    local Grade = 4
+  
+    if ESX.DoesJobExist(Job, Grade) then 
+      print("Job Exists")
+    end
+end)
+```

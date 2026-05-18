@@ -1,0 +1,162 @@
+# Main Config
+The main config of es_extended
+
+## Functions
+### ESX.GetConfig
+```lua
+ESX.GetConfig()
+```
+This function returns the config table
+
+## Properties
+
+### CustomInventory
+With this config property you can specify if you want to use a custom inventory system.
+Set to the name of the inventory system you want to use. If you don't want to use a custom inventory system set to `false`.
+A bridge is needed to make this work. By default we provide a bridge for [ox_inventory](https://github.com/esx-framework/esx_core/blob/main/%5Bcore%5D/es_extended/server/bridge/inventory/oxinventory.lua).
+
+**ox_inventory Example**
+```lua
+Config.CustomInventory = 'ox'
+```
+
+### Accounts
+With this config property you can specify what money accounts the player has. New accounts can be added in this format:
+```lua
+bitcoin = {
+    label = "Bitcoin", -- The label that can be used to display it in a hud.
+    round = false -- Should it be rounded up to full numbers?
+}
+```
+
+### StartingAccountMoney
+With this config property you can specify how much money each account should have after the player created his character.
+
+**Example**
+```lua
+StartingAccountMoney = {
+    bank = 50000, -- Give the player 50 Thousand on his bank account
+    money = 1500, -- Give the player 1500 cash.
+    black_money = 500, -- Give the player 500 Black money,
+
+    -- This can also be done with custom accounts:
+    bitcoin = 3.5 -- Give the player 3.5 bitcoins
+}
+```
+
+### StartingInventoryItems
+With this config property you can specify what items the player should have after the player created his character.
+This can be `false` if you don't want the player to receive anything. Or a table with the items and the count he should receive.
+
+**Example**
+```lua
+StartingInventoryItems = {
+    bread = 2, -- Give the player 2 bread buns
+    water = 4 -- Give the player 4 water bottles
+}
+```
+
+### DefaultSpawns
+With this config property you can specify the spawn locations the player can spawn at after creating a character. The Spawn will be picked randomly by esx.
+You can specify one spawn or multiple.
+
+**Example**
+```lua
+DefaultSpawns = { 
+	{x = 222.2027, y = -864.0162, z = 30.2922, heading = 1.0},
+	{x = 224.9865, y = -865.0871, z = 30.2922, heading = 1.0},
+	{x = 227.8436, y = -866.0400, z = 30.2922, heading = 1.0},
+	{x = 230.6051, y = -867.1450, z = 30.2922, heading = 1.0},
+	{x = 233.5459, y = -868.2626, z = 30.2922, heading = 1.0}
+}
+```
+
+### AdminGroups
+With this config property you can specify the groups that should be considered an "admin" by esx. This is used to give the player admin if he has one of the roles when creating a character.
+You can also use this by using the callback `esx:isUserAdmin`.
+
+**Example**
+```lua
+AdminGroups = {
+	['owner'] = true,
+	['sradmin'] = true,
+  ['admin'] = true,
+}
+```
+
+### EnablePaycheck
+With this config property you can specify if the player's should receive their paychecks. Set to `true` if you want to enable it and `false` to disable.
+
+### LogPaycheck
+With this config property you can specify if the paycheck's should be logged to discord through the `Paycheck` webhook. Set to `true` if you want to enable it and `false` to disable.
+
+### EnableSocietyPayouts
+With this config property you can specify if the society of the player's job should payout the paycheck. Set to `true` if you want to enable it and `false` to disable.
+
+### MaxWeight
+With this config property you can specify the Max Weight of the player without having a backpack on.
+
+### PaycheckInterval
+With this config property you can specify the interval in milliseconds the paycheck should be payed out.
+
+### EnableDebug
+With this config property you can specify if Debug Information should be logged to the console. Set to `true` if you want to enable it and `false` to disable. This should be set to `false` on a normal production server.
+
+### Multichar
+This config property should normally not be touched if you are not using a multicharacter system or are using esx_multicharacter.
+If you are using a third-party multicharacter system follow the instructions of that the developers of it gave you.
+
+### Identity
+This config property specifies if the player's identity should be loaded(firstname, lastname, dateofbirth, sex, height). This will be also true if `Multichar` is enabled.
+Do not touch this if you don't know what you are doing.
+
+### DistanceGive
+This config property specifies what the max distance is for a player to give something to another player.
+
+### AdminLogging
+This config property specifies if certain admin commands should be logged to discord using the `UserActions` webhook. 
+Set to `true` if you want to enable it and `false` to disable.
+
+### ValidCharacterSets  
+This config option allows you to manually enable support for additional character sets if your server is multilingual.  
+By default, all values are `false` to restrict input to basic Latin characters and the currently active locale.
+
+**Info**
+  Based on the `esx:locale` ConVar, one character set is automatically allowed to match the current server locale.  
+  You do not need to enable your locale's character set here manually.
+
+Enable only if players need to input characters from multiple locales (e.g., Greek + Arabic).
+
+**Available Character Sets**
+- `'el'` – Greek  
+- `'sr'` – Cyrillic  
+- `'he'` – Hebrew  
+- `'ar'` – Arabic  
+- `'zh-cn'` – Chinese, Japanese, Korean (CJK)
+
+**Example**
+```lua
+Config.ValidCharacterSets = {
+  ['el'] = true,   -- Allow Greek characters in addition to the locale
+  ['sr'] = false,  -- Disallow Cyrillic
+  ['he'] = false,  -- Disallow Hebrew
+  ['ar'] = false,  -- Disallow Arabic
+  ['zh-cn'] = true -- Allow CJK characters
+}
+```
+
+### Identifier
+This config properties lets you decide what type of license should es_extended use to save player's character.
+
+**Available Options**
+
+[Fivem Documentation - GetPlayerIdentifiers](https://docs.fivem.net/docs/scripting-reference/runtimes/lua/functions/GetPlayerIdentifiers/)
+
+**Info**
+  Based on the `esx:identifier` convar.
+
+**Example**
+server.cfg
+```lua
+setr esx:identifier "steam"
+```

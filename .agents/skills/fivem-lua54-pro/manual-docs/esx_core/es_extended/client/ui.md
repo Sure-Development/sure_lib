@@ -1,0 +1,174 @@
+# UI
+This topic explains the existing functions implemented by esx to create different types of ui.
+
+## Menu
+ESX offers multiple menu's by default; `esx_menu_default`, `esx_menu_dialog` and `esx_menu_list`. But we offer functions to create your own menu, they are listed below.
+
+### RegisterType
+Register a custom Menu Type
+
+**Arguments**
+- type: `string`
+  - The menu key for the type.
+- open: `function`
+  - Function that gets ran when it should be opened.
+- close: `function`
+  - Function that gets ran when it should be closed. 
+
+**Example**
+```lua
+ESX.UI.Menu.RegisterType("my_menu", myOpenFunction, myCloseFunction)
+```
+
+### Open
+Open menu of given type and data.
+
+**Arguments**
+- type: `string`
+  - The menu key for the type.
+- namespace: `string`
+  - The namespace for the menu. (Usually script name)
+- name: `string`
+  - The name of the menu
+- data: `table`
+  - The options for the menu
+- submit: `function`
+  - The function that gets ran when triggering a button.
+- cancel: `function`
+  - The function that gets ran when canceling the menu.
+- change: `function`
+  - The function that gets ran when data changes.
+- close: `function`
+  - The function that gets ran when the menu closes.
+
+**Returns**
+- type: `string`
+  - The menu key for the type.
+- namespace: `string`
+  - The namespace for the menu. (Usually script name)
+- resourceName: `string`
+  - The script that created it or Unknown
+- name: `string`
+  - The name of the menu
+- data: `table`
+  - The options for the menu
+- submit: `function`
+  - Trigger to force the submit function.
+- cancel: `function`
+  - Trigger to force the cancel function.
+- change: `function`
+  - Trigger to force the change function.
+- close: `function`
+  - Closes the menu.
+- update: `function`
+  - Updates the menu.
+- refresh: `function`
+  - Refreshes the menu.
+- setElement: `function`
+  - Set element data.
+- setElements: `function`
+  - Set elements.
+- setTitle: `function`
+  - Set title of menu
+- removeElement: `function`
+  - Remove element by given query
+
+
+**Example**
+```lua
+RegisterCommand('testOpen', function()
+    -- Using the menu from the script `esx_menu_default`
+    ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'my_default_menu', {
+        title = "My title",
+        align = 'bottom-left',
+        elements = elements,
+        locales = locales
+    }, function(data, menu)
+        print("Submit data", data, menu)
+    end, function(data, menu)
+        menu.close()
+        print("Cancel data", data, menu)
+    end, function(data, menu)
+        print("Change data", data, menu)
+    end, function()
+        print("Closed menu")
+    end)
+end)
+```
+
+### Close
+Close the menu of given type, namespace and name
+
+**Arguments**
+- menuType: `string`
+  - The type of the menu.
+- namespace: `string`
+  - The namespace for the menu. (Usually script name)
+- name: `string`
+  - The name of the menu 
+
+**Example**
+```lua
+RegisterCommand('testClose', function()
+    -- Using the menu from the script `esx_menu_default`
+    ESX.UI.Menu.Close('default', GetCurrentResourceName(), 'my_default_menu')
+end)
+```
+
+### CloseAll
+Close all menu's
+
+**Example**
+```lua
+RegisterCommand('closeAllMenus', function()
+    ESX.UI.Menu.CloseAll()
+end)
+```
+
+### GetOpened
+Get Menu table of given type, namespace and name. Refer to the docs for `ESX.UI.Menu.Open` for detailed infos to the menu data.
+
+**Arguments**
+- menuType: `string`
+  - The type of the menu.
+- namespace: `string`
+  - The namespace for the menu. (Usually script name)
+- name: `string`
+  - The name of the menu 
+
+**Example**
+```lua
+RegisterCommand('closeMyMenu', function()
+    -- Using the menu from the script `esx_menu_default`
+    local myMenu = ESX.UI.Menu.GetOpened('default', GetCurrentResourceName(), 'my_default_menu')
+
+    myMenu.close() -- Close menu
+end)
+```
+
+### GetOpenedMenus
+Get all open menus. Refer to the docs for `ESX.UI.Menu.Open` for detailed infos to the menu data.
+
+### IsOpen
+Check if menu of given type, namespace and name is open.
+
+**Arguments**
+- menuType: `string`
+  - The type of the menu.
+- namespace: `string`
+  - The namespace for the menu. (Usually script name)
+- name: `string`
+  - The name of the menu 
+
+**Example**
+```lua
+RegisterCommand('isMenuOpen', function()
+    -- Using the menu from the script `esx_menu_default`
+    if ESX.UI.Menu.IsOpen('default', GetCurrentResourceName(), 'my_default_menu') then
+        print("My epic menu is open!")
+    end
+end)
+```
+
+## ShowInventoryItemNotification
+Show a notification for the item in the inventory. (Used mainly by the built-in inventory)

@@ -1,0 +1,1223 @@
+# xPlayer Functions
+Used to set and manipulate data from the player. It consists out of multiple functions and multiple variables.
+
+## Retrieving xPlayer
+You can get the xPlayer by using the `ESX.GetPlayerFromId` function.
+
+**Warning**
+    You should always check for `nil` before using xPlayer
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+if xPlayer then ... end  --Always check for nil
+```
+
+## PlayerData
+There are some variables that contain different data about the player. For more information about the player data, check the [Player Data](#player-data) section.
+
+## Miscellaneous
+
+### triggerEvent 
+This function will trigger a client side event for the player.
+
+**Arguments**
+- eventName: `string`
+  - The event name you want to trigger for the player.
+- ...
+  - The arguments you want to pass to the client side event.
+
+
+**Example**
+
+You can use more arguments like you would do in a classic TriggerEvent 
+```lua 
+local xPlayer = ESX.GetPlayerFromId(playerId) 
+
+xPlayer.triggerEvent('esx:showNotification', 'this is a notification', 'error', 4000, "Test title", "top-left") 
+```
+
+### getPlayTime
+This function will return the player's total playtime with their current character.
+
+#### Returns
+- playTime: `number`
+  - The player's total playtime in seconds.
+
+**Example**
+
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+local playtime = xPlayer.getPlayTime()
+local days = math.floor(playtime / 86400)
+local hours = math.floor((playtime % 86400) / 3600)
+local minutes = math.floor((playtime % 3600) / 60)
+print(("Playtime: ^5%s^0 Days | ^5%s^0 Hours | ^5%s^0 Minutes"):format(days, hours, minutes))
+```
+
+### setCoords 
+This function will change the coords of the player. Making him teleport.
+
+**Arguments**
+- coords: `vector3` | `vector4` | `table`
+  - The coords you want to teleport the player to.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId) 
+
+xPlayer.setCoords(vector3(0, 0, 0)) 
+```
+
+### getCoords 
+This function will return the coords from the player.
+
+**Arguments**
+- vector?: `boolean` (Default: `false`)
+  - If you want the coords as a vector3 or as a table
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromid(playerId) 
+local playerCoords = xPlayer.getCoords(true) 
+```
+
+### kick 
+This function will kick the player from the Server. 
+
+**Info**
+    This function is only provided for backwards compatibility. You should use `DropPlayer(playerId)` instead.
+
+**Arguments**
+- reason?: `string`
+  - The reason why the player is kicked.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId) 
+
+xPlayer.kick('You are kicked')
+```
+
+## Player Data
+
+### getIdentifier 
+This function will return the player's identifier. 
+
+**Returns**
+
+The player's rockstar license.
+
+
+**Example** 
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId) 
+local identifier = xPlayer.getIdentifier()
+```
+
+### getSSN
+This function will return the player's Social Security Number (SSN).
+
+**Returns**
+
+The player's unique SSN in the format `XXX-XX-XXXX`.
+
+**Example** 
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+print(xPlayer.getSSN()) -- e.g., "123-45-6789"
+```
+
+### setName
+This function sets the name of the player.
+
+**Arguments**
+- name: `string`
+  - The name you want to set for the player.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.setName("John Doe")
+```
+
+### getName
+This function returns the name of the fivem player.
+
+**Returns**
+
+Returns either a roleplay name consisting out of firstname and lastname with esx_identity or his fivem name.
+- name: `string`
+  - The player's name.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+print("Player is called: " .. xPlayer.getName())
+```
+
+### setJob
+This function sets the players current job.
+
+**Arguments**
+- newJob: `string`
+  - The job you want to set for the player.
+- grade: `number`
+  - The grade you want to set for the player.
+- onDuty: `boolean?`
+  - Set the player on duty or off duty. Uses `Config.DefaultJobDuty` if not provided. 
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.setJob("police", 4, true) -- Set the player the police boss.
+```
+
+### getJob
+This function returns the job of the player.
+
+**Returns**
+- id: `number`
+  - The job's id from the database.
+- name: `string`
+  - The job's name.
+- label: `string`
+  - The job's label.
+- grade: `string` 
+  - The job's grade.
+- grade_name: `string`
+  - The job's grade name.
+- grade_label: `string`
+  - The job's grade label.
+- grade_salary: `string`
+  - The job's grade grade_salary
+- skin_male: `table`
+  - The job's male grade skin/outfit.
+- skin_female: `table`
+  - The job's female grade skin/outfit.
+- onDuty: `boolean`
+  - If the player is on duty.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+local job = xPlayer.getJob()
+local jobName = job.label
+local onDuty = job.onDuty
+local salary = job.grade_salary
+
+print(("Player is a %s %s and earns %s"):format(onDuty and "on duty" or "off duty", jobName,  salary))
+```
+
+
+## Money Functions
+
+### setMoney 
+This function will set the money account from the player.
+
+**Info**
+    This function is only provided for backwards compatibility. You should use `xPlayer.setAccountMoney('money', amount)` instead.
+
+**Arguments**
+- amount: `number`
+  - The amount you want to set the player's money to.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId) 
+xPlayer.setMoney(100) 
+```
+
+### getMoney 
+This function will return the amount of money the player has. 
+
+**Info**
+    This function is only provided for backwards compatibility. You should use `xPlayer.getAccount('money').money` instead.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId) 
+local money = xPlayer.getMoney() 
+```
+
+### addMoney 
+This function will add money to the players money account. 
+
+**Info**
+    This function is only provided for backwards compatibility. You should use `xPlayer.addAccountMoney('money', amount, reason)` instead.
+
+**Arguments**
+- amount: `number`
+  - The amount you want to add to the player's money account.
+- reason: `string`
+  - The reason why the player got the money.
+
+**Example**
+```lua 
+local xPlayer = ESX.GetPlayerFromId(playerId) 
+xPlayer.addMoney(100, "Sold an apple")
+```
+
+### removeMoney
+This function will remove money from the player's money account.
+
+**Info**
+    This function is only provided for backwards compatibility. You should use `xPlayer.removeAccountMoney('money', amount, reason)` instead.
+
+**Arguments**
+- amount: `number`
+  - The amount you want to remove from the player's money account.
+- reason: `string`
+  - The reason why the player lost the money.
+
+**Example**
+```lua 
+local xPlayer = ESX.GetPlayerFromId(playerId) 
+xPlayer.removeMoney(900, "Bought an apple including Tax")
+```
+
+### getAccounts
+This function returns all of the player's accounts.
+
+**Arguments**
+- minimal?: `boolean` (Default: `false`)
+  - Should only return amount of accounts.
+
+**Returns**
+
+A **`table`** with the key being the account name and the value either being a table or a number with the accounts balance amount when minimal.
+
+Non-Minimal:
+- name: `string`
+  - The account name.
+- money: `number`
+  - The account balance.
+- label: `string`
+  - The account label.
+
+Minimal:
+- money: `number`
+  - The cash balance.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+local accounts = xPlayer.getAccounts()
+
+print("Player has " .. accounts.bank.money .. " in their " .. accounts.bank.name .. " account.")
+```
+
+### setAccountMoney
+This function sets the accounts balance.
+
+**Info**
+    This function may have different behaviour with a 3rd party inventory installed.
+
+**Arguments**
+- accountName: `string`
+  - The account name you want to set the balance for.
+- amount: `number`
+  - The amount you want to set the account balance to.
+- reason?: `string` (Default: `"Unknown"`)
+  - The reason why the account balance was set.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.setAccountMoney("bank", 5000, "5000$ Limit reached")
+```
+
+### addAccountMoney
+This function adds money to specified account.
+
+**Info**
+    This function may have different behaviour with a 3rd party inventory installed.
+
+**Arguments**
+- accountName: `string`
+  - The account name you want to add the money to.
+- amount: `number`
+  - The amount you want to add to the account balance.
+- reason?: `string` (Default: `"Unknown"`)
+  - The reason why the account balance was added.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.addAccountMoney("bank", 5000, "Paycheck recieved")
+```
+
+### removeAccountMoney
+This function removes money from the account.
+
+**Info**
+    This function may have different behaviour with a 3rd party inventory installed.
+
+**Arguments**
+- accountName: `string`
+  - The account name you want to remove the money from.
+- amount: `number`
+  - The amount you want to remove from the account balance.
+- reason?: `string` (Default: `"Unknown"`)
+  - The reason why the account balance was removed.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.removeAccountMoney("bank", 2400, "Dept payoff.")
+```
+
+### togglePaycheck
+This function will toggle the player's paycheck.
+
+**Arguments**
+- toggle: `boolean`
+  - Set if the player should receive a paycheck or not.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+-- Disable paycheck
+xPlayer.togglePaycheck(false)
+-- Enable paycheck
+xPlayer.togglePaycheck(true)
+```
+
+### isPaycheckEnabled
+This function will return if the player's paycheck is enabled.
+
+**Returns**
+- enabled: `boolean`
+  - If the player's paycheck is enabled.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+local paycheckEnabled = xPlayer.isPaycheckEnabled()
+
+print("Player's paycheck is " .. (paycheckEnabled and "enabled" or "disabled"))
+```
+
+
+## Permissions
+
+### setGroup 
+This function will set the player's group. 
+
+**Arguments**
+- group: `string`
+  - The group you want to set the player to.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId) 
+
+xPlayer.setGroup('admin')
+```
+
+### getGroup
+This function will get the player's group.
+
+**Returns**
+
+The player's group.
+- group: `string`
+  - The player's group.
+
+## Variables
+
+### set
+This function will set a variable that you can access from the xPlayer table.
+
+**Arguments**
+- key: `string`
+  - The key you want to set.
+- value: `any`
+  - The value you want to set the key to.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId) 
+
+xPlayer.set('cool', false)
+```
+
+### get
+This function will get a variable saved in the xPlayer table.
+
+**Arguments**
+- key: `string`
+  - The key you want to get.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId) 
+
+if xPlayer.get('cool') then
+    print("Player is cool! :)")
+else
+    print("Player is not cool! >:/")
+end
+```
+
+### updatePlayerData
+This function notifies the client about a player data update by triggering the `esx:updatePlayerData` event.  
+It is used internally by other functions like `set`, `setMeta`, and `clearMeta`, but can also be called manually if needed.
+
+**Arguments**
+- key: `string`  
+  - The key that was updated (e.g., `job`, `accounts`, or any custom key).
+- value: `any`  
+  - The new value to send to the client.
+
+**Example**
+```lua
+local xPlayer = ESX.Player(playerId)
+
+xPlayer.updatePlayerData('cool', false)
+```
+
+## Weapon Functions
+
+### getLoadout
+This function returns the loadout of the player.
+
+**Caution**
+  This function may **not** exist with a 3rd party inventory installed. You should use `xPlayer.getInventory` as a fallback when one is active.
+
+**Arguments**
+- minimal?: `boolean` (Default: `true`)
+  - Should only return the ammo and components.
+
+**Returns**
+
+A **`table`** with the key being the weapon name and the value either being a table.
+Non-Minimal:
+- name: `string`
+  - The weapon's name.
+- ammo: `number`
+  - The weapon's ammo.
+- label: `string`
+  - The weapon's label.
+- components: `table`
+  - The weapon's components.
+- tintIndex: `number`
+  - The weapon's tint.
+
+Minimal:
+- ammo: `number`
+  - The weapon's ammo.
+- components: `table`
+  - The weapon's components.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+local loadout = xPlayer.getLoadout()
+
+if loudout["weapon_pistol"] ~= nil then
+    print("Player has a pistol with " .. loadout["weapon_pistol"].ammo .. " ammo.")
+end
+```
+
+### getWeapon
+This function returns the weapon table of the specified weapon.
+
+**Caution**
+    This function may **not** exist with a 3rd party inventory installed. You should use `xPlayer.hasItem` as a fallback when one is active.
+
+**Arguments**
+- weaponName: `string`
+  - The weapon's name.
+
+**Returns**
+
+Returns the weapon table of the specified weapon.
+- name: `string`
+  - The weapon's name.
+- ammo: `number`
+  - The weapon's ammo.
+- label: `string`
+  - The weapon's label.
+- components: `table`
+  - The weapon's components.
+- tintIndex: `number`
+  - The weapon's tint.
+
+### addWeapon
+This function gives the player the specified weapon.
+
+**Caution**
+    This function may **not** exist with a 3rd party inventory installed. You should use `xPlayer.addInventoryItem` as a fallback when one is active.
+
+**Arguments**
+- weaponName: `string`
+  - The weapon's name.
+- ammo: `number`
+  - The weapon's ammo.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.addWeapon("weapon_pistol50", 200) -- Give the player a 50. cal with 200 bullets.
+```
+
+### addWeaponComponent
+This function gives the player specified components on the specified weapon.
+
+**Caution**
+    This function may **not** exist with a 3rd party inventory installed. You should use their metadata system as a fallback when one is active.
+
+**Arguments**
+- weaponName: `string`
+  - The weapon's name.
+- component: `string`
+  - The component you want to add.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.addWeaponComponent("weapon_pistol50", "suppressor") -- Give the player's 50. cal a suppressor.
+```
+
+### addWeaponAmmo
+This function adds ammo to the specified weapon.
+
+**Caution**
+   This function may **not** exist with a 3rd party inventory installed. You should use their metadata system as a fallback when one is active.
+
+**Arguments**
+- weaponName: `string`
+  - The weapon's name.
+- ammo: `number`
+  - The ammo you want to add.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.addWeaponAmmo("weapon_pistol50", 250) -- Give the player's 50. cal 250 more bullets.
+```
+
+### updateWeaponAmmo
+This function sets the weapon's ammo to the specified count.
+
+**Caution**
+    This function may **not** exist with a 3rd party inventory installed. You should use their metadata system as a fallback when one is active.
+
+**Arguments**
+- weaponName: `string`
+  - The weapon's name.
+- ammo: `number`
+  - The ammo you want to set.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.updateWeaponAmmo("weapon_pistol50", 50) -- Set the player's 50. cal to 50 bullets.
+```
+
+### setWeaponTint
+This function sets the specified weapon's tint to the specified tint.
+
+**Caution**
+    This function may **not** exist with a 3rd party inventory installed. You should use their metadata system as a fallback when one is active.
+
+**Arguments**
+- weaponName: `string`
+  - The weapon's name.
+- weaponTintIndex: `number`
+  - The tint you want to set.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.setWeaponTint("weapon_pistol50", 23) -- Set the player's 50. cal tint to mettalic gold.
+```
+
+### getWeaponTint
+This function returns the specified weapon's tint.
+
+**Caution**
+    This function may **not** exist with a 3rd party inventory installed. You should use their metadata system as a fallback when one is active.
+
+**Arguments**
+- weaponName: `string`
+  - The weapon's name.
+
+**Returns**
+
+Returns the specified weapon's tint.
+- tintIndex: `number`
+  - Specified weapon's current tint index.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+print("Player's 50. Caliber has tint index " .. xPlayer.getWeaponTint("weapon_pistol50"))
+```
+
+### removeWeapon
+This function removes a weapon from the player's loadout.
+
+**Caution**
+  This function may **not** exist with a 3rd party inventory installed. You should use their metadata system as a fallback when one is active.
+
+**Arguments**
+- weaponName: `string`
+  - The weapon's name.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.removeWeapon("weapon_pistol50") -- Remove 50. cal pistol
+```
+
+### removeWeaponComponent
+This function removes a component from a weapon.
+
+**Caution**
+    This function may **not** exist with a 3rd party inventory installed. You should use their metadata system as a fallback when one is active.
+
+**Arguments**
+- weaponName: `string`
+  - The weapon's name.
+- weaponComponent: `string`
+  - The component you want to remove.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.removeWeaponComponent("weapon_pistol50", "suppressor") -- Remove suppressor from 50. cal pistol
+```
+
+### removeWeaponAmmo
+This function removes specified ammo count from specified weapon.
+
+**Caution**
+    This function may **not** exist with a 3rd party inventory installed. You should use their metadata system as a fallback when one is active.
+
+**Arguments**
+- weaponName: `string`
+  - The weapon's name.
+- ammoCount: `number`
+  - The ammo you want to remove.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.removeWeaponAmmo("weapon_pistol50", 25) -- Remove 25 bullets from 50. cal pistol
+```
+
+### hasWeaponComponent
+This function removes specified component from specified weapon.
+
+**Caution**
+   This function may **not** exist with a 3rd party inventory installed . You should use their metadata system as a fallback when one is active.
+
+**Arguments**
+- weaponName: `string`
+  - The weapon's name.
+- weaponComponent: `string`
+  - The component you want to remove.
+
+**Returns**
+
+Returns a boolean if the player has specified weapon component.
+- hasComponent: `boolean`
+  - If the player has specified weapon component.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+if xPlayer.hasWeaponComponent("weapon_pistol50", "suppressor") then
+    print("50. Cal Pistol has a suppressor.")
+else
+    print("50. Cal Pistol doesn't have a suppressor.")
+end
+```
+
+### hasWeapon
+This function checks if player has given weapon.
+
+**Caution**
+    This function may **not** exist with a 3rd party inventory installed. You should use `xPlayer.hasItem` as a fallback when one is active.
+
+**Arguments**
+- weaponName: `string`
+  - The weapon's name.
+
+**Returns**
+
+Returns a boolean if the player has specified weapon.
+- hasWeapon: `boolean`
+  - If the player has specified weapon.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+if xPlayer.hasWeapon("weapon_pistol50") then
+    print("Player has a 50. Cal Pistol")
+else
+    print("Player doesn't have a 50. Cal Pistol")
+end
+```
+
+## Inventory Functions
+
+### getInventory
+This function returns the inventory of the player.
+
+**Warning**
+    This function may have different behaviour with a 3rd party inventory installed.
+
+**Arguments**
+- minimal?: `boolean` (Default: `true`)
+  - Should only return the item count.
+
+**Returns**
+
+A **`table`** with the key being the item name and the value either being a table or a number with the item count when minimal.
+Non-Minimal:
+- name: `string`
+  - The item name.
+- count: `number`
+  - The item count.
+- label: `string`
+  - The item label.
+- weight: `number`
+  - The item weight.
+- usable: `boolean`
+  - Does the item have a use callback?
+- rare: `boolean`
+  - Is the item rare?
+- canRemove: `boolean`
+  - Can the item be removed?
+
+Minimal:
+- count: `number`
+  - The item count.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+local inventory = xPlayer.getInventory()
+local breadItem = inventory["bread"]
+
+print("Player has " .. breadItem.count .. " bread. Each weighing: " .. breadItem.weight)
+```
+
+### getWeight
+This function returns the player's current inventory weight.
+
+**Returns**
+
+Returns the player's inventory weight
+- weight: `number`
+  - The player's inventory weight.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+print("The player's current inventory weighs " .. xPlayer.getWeight())
+```
+
+### getMaxWeight
+This function returns the player's max inventory weight.
+
+**Returns**
+
+Returns the player's inventory max weight.
+- maxWeight: `number`
+  - The player's max inventory weight.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+print("The player can hold a max of " .. xPlayer.getMaxWeight())
+```
+
+### setMaxWeight
+This function sets the max weight that can be carried.
+
+**Arguments**
+- newWeight: `number`
+  - The new max weight.
+
+**Example**
+```lua
+local backpack = true -- Player has backpack on
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+if backpack then
+    xPlayer.setMaxWeight(120)
+else
+    xPlayer.setMaxWeight(ESX.Config.MaxWeight)
+end
+```
+
+### canCarryItem
+This function returns a boolean if the player can carry specified item with amount of times.
+
+**Warning**
+  This function may have different behaviour with a 3rd party inventory installed.
+
+**Arguments**
+- itemName: `string`
+  - The item name.
+- count: `number`
+  - The amount of times the item is carried.
+
+**Returns**
+
+Returns if player can carry specified item with amount of times.
+- canCarry: `boolean`
+  - If the player can carry the specified item.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+local canHoldBread = xPlayer.canCarryItem("bread", 5)
+
+if canHoldBread then
+    print("Player can hold 5 bread")
+else
+    print("Player can't hold 5 bread")
+end
+```
+
+### canSwapItem
+This function returns a boolean if the player can swap specified items with the specified amounts.
+
+**Warning**
+  This function may have different behaviour with a 3rd party inventory installed.
+
+**Arguments**
+- firstItem: `string`
+  - The name of the item that will be checked.
+- firstItemCount: `number`
+  - The amount of the first item that will be checked.
+- secondItem: `string`
+  - The name of the item that will be checked.
+- secondItemCount: `number`
+  - The amount of the second item that will be checked.
+
+**Returns**
+
+Returns if the player can swap specified items with the specified amounts.
+- canSwapItem: `boolean`
+  - If the player can swap the specified items.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+local canBeSwapped = xPlayer.canCarryItem("bread", 5, "water", 6)
+
+if canBeSwapped then
+    print("Player's inventory fits to swap 6 water with 5 bread")
+else
+    print("Player can't swap items")
+end
+```
+
+### syncInventory
+This function syncs weight, items and account money from ox_iventory with esx.
+
+**Warning**
+    This function only exists with ox_inventory.
+    This function should not be used and only exists to sync data between the scripts.
+
+**Arguments**
+- weight: `number`
+  - The player's inventory weight.
+- maxWeight: `number`
+  - The player's max inventory weight.
+- items: `table`
+  - The player's items.
+- money: `number`
+  - The player's money.
+
+## Item Functions
+
+### hasItem
+This function checks if player has item.
+
+**Warning**
+  This function may have different behaviour with a 3rd party inventory installed.
+
+**Arguments**
+- item: `string`
+  - The item name.
+
+**Returns**
+
+Returns a boolean if the player has specified item.
+- hasItem: `boolean`
+  - If the player has specified item.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+if xPlayer.hasWeapon("weapon_pistol50") then
+    print("Player has a 50. Cal Pistol")
+else
+    print("Player doesn't have a 50. Cal Pistol")
+end
+```
+
+### getInventoryItem
+This function returns the specified item from the player's inventory.
+
+**Warning**
+  This function may have different behaviour with a 3rd party inventory installed.
+
+**Arguments**
+- itemName: `string`
+  - The item name.
+
+**Returns**
+
+Returns the item data from player's inventory.
+- name: `string`
+  - The item name.
+- count: `number`
+  - The item count.
+- label: `string`
+  - The item label.
+- weight: `number`
+  - The item weight.
+- usable: `boolean`
+  - Does the item have a use callback?
+- rare: `boolean`
+  - Is the item rare?
+- canRemove: `boolean`
+  - Can the item be removed?
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+local item = xPlayer.getInventoryItem("water")
+
+print("Player has " .. item.count .. " water bottles. Each weighing: " .. item.weight)
+```
+
+### addInventoryItem
+This function gives the player specified item, speciefied count of times.
+
+**Warning**
+   This function may have different behaviour with a 3rd party inventory installed.
+
+**Arguments**
+- itemName: `string`
+  - The item name.
+- count: `number`
+  - The amount of times the item is given.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.addInventoryItem("bread", 5) -- Add 5 breads
+```
+
+### removeInventoryItem
+This function removes the item from the player's inventory specified count of times.
+
+**Warning**
+  This function may have different behaviour with a 3rd party inventory installed.
+
+**Arguments**
+- itemName: `string`
+  - The item name.
+- count: `number`
+  - The amount of times the item is removed.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.removeInventoryItem("bread", 5) -- Remove 5 breads
+```
+
+### setInventoryItem
+This function sets the item in the player's inventory to the specified count.
+
+**Warning**
+   This function may have different behaviour with a 3rd party inventory installed.
+
+**Arguments**
+- itemName: `string`
+  - The item name.
+- count: `number`
+  - The amount of times the item is set.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.setInventoryItem("bread", 5) -- Sets bread count to 5
+```
+
+## Notification Functions
+
+### showNotification
+This function triggers a notification.
+
+**Arguments**
+- msg: `string`
+  - The message you want to be displayed.
+- type: `string`
+  - The type of the notification.
+- length: `number`
+  - The length of the notification.
+- title: `string?`
+  - The title of the notification. Optional.
+- position: `string?`
+  - The position of the notification. Optional, defaults to middle-right.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.showNotification("You have been invited to a round of DnD", "info", 3000, "Test title", "top-left")
+```
+
+### showAdvancedNotification
+This function shows a advanced notification.
+
+**Arguments**
+- sender: `string`
+  - The sender of the notification.
+- subject: `string`
+  - The subject of the notification.
+- msg: `string`
+  - The message of the notification.
+- textureDict: `string`
+  - The texture dictionary of the notification.
+- iconType: `string`
+  - The icon type of the notification.
+- flash?: `boolean`
+  - Should the notification flash?
+- saveToBrief?: `boolean`
+  - Should the notification be saved to the brief?
+- hudColorIndex?: `number`
+  - The hud color of the notification.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.showAdvancedNotification('title', 'subject', 'msg', 'CHAR_BANK_MAZE', 9)
+```
+![Example Image](https://i.imgur.com/bX1oxrF.jpg)
+
+### showHelpNotification
+This function shows a help notification.
+
+**Arguments**
+- msg: `string`
+  - The message you want to be displayed.
+- thisFrame?: `boolean`
+  - Should the notification be displayed in this frame? (Do it on client instead)
+- beep?: `boolean`
+  - Should the notification beep?
+- duration?: `number` (Default: `5000`)
+  - The duration of the notification.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.showHelpNotification('TIP: If you find 10 pieces you win!', false, false, 3000)
+```
+
+
+## Metadata Functions
+
+### setMeta
+This function sets the value of the specified meta.
+
+**Arguments**
+- index: `string`
+  - The meta you want to set.
+- value: `string` | `number` | `table`
+  - The value you want to set the meta to.
+- subIndex?: `string`
+  - The sub index/key you want to set the meta to.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+xPlayer.setMeta("title", "Sr. Doctor")
+```
+
+### getMeta
+This function returns the value of the specified meta.
+
+**Arguments**
+- index: `string`
+  - The meta you want to get.
+- subIndex?: `string`
+  - The sub index/key you want to get the meta from.
+
+
+**Returns**
+
+Returns the metadata requested or the table with all metadatas if no `index` was specified with.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+print("Player has the " .. xPlayer.getMeta("title") .. " title!")
+```
+
+### clearMeta
+This function clears the specified meta.
+
+**Arguments**
+- index: `string`
+  - The meta you want to clear.
+- subIndex?: `string`
+  - The sub index/key you want to clear the meta from.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+xPlayer.clearMeta("title") -- Clear the player's title, removing it.
+```
+
+### executeCommand
+This function executes a command on a players behalf.
+
+**Arguments**
+- command: `string`
+  - The command the player will execute.
+
+**Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(playerId)
+
+xPlayer.executeCommand("dv 500")
+```

@@ -1,0 +1,101 @@
+# Adjustments
+ESX provides a few configurable options to adjust the behavior of the framework and game to your liking. These adjustments can be made in the `es_extended/shared/config/adjustments.lua` config.
+
+## Properties
+
+### DisableHealthRegeneration
+This config property specifies if the player should regenerate health. 
+Set to `true` if you want to disable it and `false` to enable.
+
+### DisableVehicleRewards
+This config property specifies if the player should receive weapons from being in specific vehicles(weapon in cop cars, parachute in helicopter).
+Set to `true` if you want to disable it and `false` to enable.
+
+### DisableNPCDrops
+This config property specifies if peds/npcs should drop weapons/ammo after dying.
+Set to `true` if you want to disable it and `false` to enable.
+
+### DisableDispatchServices
+This config property specifies if dispatch services(Police, Ambulance, Firetruck) should spawn after an event(Someone dying, car on fire, e.g) happens.
+Set to `true` if you want to disable it and `false` to enable.
+
+### DisableScenarios
+This config property specifies if npc scenarios should happen(Random Ambulance driving around, Helicopters, Workers at the Construction, e.g.)
+Set to `true` if you want to disable it and `false` to enable.
+
+### DisableAimAssist
+This config property specifies if Aim assist should be disabled (mainly for controllers).
+Set to `true` if you want to disable it and `false` to enable.
+
+### DisableVehicleSeatShuff
+This config property specifies if it should be disable for the front passenger shuffing into the driver seat if it's free.
+Set to `true` if you want to disable it and `false` to enable.
+
+### DisableDisplayAmmo
+This config property specifies if it should disable the ammunition display on the top right by GTA.
+Set to `true` if you want to disable it and `false` to enable.
+
+### EnablePVP
+With this config property you can specify if Player vs. Player combat should be enabled on the server. Set to `true` if you want to enable it and `false` to disable.
+
+### EnableWantedLevel
+With this config property you can specify if the GTA wanted level should be enabled. Set to `true` if you want to enable it and `false` to disable.
+
+### RemoveHudComponents
+This config property specifies if it should disable certain parts of the player's hud.
+Set to `true` if you want to disable it and `false` to enable.
+```lua
+RemoveHudComponents       = {
+	[1] = false,  -- The player's wanted starts,
+	[2] = false,  -- The weapon icon of the current weapon.
+	[3] = false,  -- The player's cash (This is not used by ESX)
+	[4] = false,  -- The player's cash (This is not used by ESX)
+	[5] = false,  -- Gta5 default notification/message.
+	[6] = false,  -- The display on the bottom right showing the vehicles label briefly.
+	[7] = false,  -- The display showing the current area label briefly.
+	[8] = false,  -- The display on the bottom right showing the vehicles class label briefly.
+	[9] = false,  -- The display showing the current strett name briefly.
+	[10] = false, -- The help text.
+	[11] = false, -- Floating help text 1
+	[12] = false, -- Flaoting help text 2
+	[13] = false, -- Popup when money has changed (This is not used by ESX)
+	[14] = false, -- Crosshair
+	[15] = false, -- SUBTITLE_TEXT
+	[16] = false, -- Radio station menu in the car
+	[17] = false, -- Saving game icon,
+	[18] = false, -- GAME_STREAM
+	[19] = false, -- Weapon Wheel
+	[20] = false, -- The weapon stats in the weapon wheel
+	[21] = false, -- HUD_COMPONENTS
+	[22] = false, -- HUD_WEAPONS
+}
+```
+
+### CustomAIPlates
+This config property specifies the plate pattern naturally spawned npc vehicles should have.
+- Using `1` will lead to a random number from 0-9
+- Using `A` will lead to a random letter from A-z
+- Using `.` will lead to a random letter o number.
+- Using `^1` will lead to a literal 1 being emitted.
+- Using `^A` will lead to a literal A being emitted.
+- Any other characters will lead to said character being emitted.
+- A String shorter than 8 characters will be padded on the right.
+
+**Example**
+```lua
+CustomAIPlates = "ESX-^11EA" -- Example outcome: ESX-15EG
+```
+
+### DiscordActivity
+This config specifies the activity displayed on the discord rich presence. This will require an appId from [discord's developer portal](https://discord.com/developers/applications).
+
+**Placeholders**
+Playerholders that can be used in the activity:
+- `{server_name}` - The server's name
+- `{server_endpoint}` - The server's IP and port
+- `{server_players}` - The current player count
+- `{server_maxplayers}` - The maximum player count
+- `{player_name}` - The player's name
+- `{player_rp_name}` - The player's RP name
+- `{player_id}` - The player's ID
+- `{player_street}` - The player's current street name

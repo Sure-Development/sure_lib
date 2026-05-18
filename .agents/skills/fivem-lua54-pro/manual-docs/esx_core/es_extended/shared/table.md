@@ -1,0 +1,221 @@
+## Table
+
+### DumpTable
+This function dumps the given table to a readable string with a tree structure.
+
+**Arguments**
+- table: `table`
+  - The table to dump.
+- nb: `number`
+  - The number of spaces to use for indentation.
+
+**Example**
+```lua
+local myTable = { {esx = 'awesome'} }
+local dumpedTable = ESX.DumpTable(myTable)
+
+print(dumpedTable)
+```
+
+### SizeOf
+This returns the size of a table. This is a nil proof version to #table.
+
+**Arguments**
+- table: `table`
+  - The table to get the size of.
+
+### Set
+This function sets all values of the table to true.
+
+**Arguments**
+- table: `table`
+  - The table to set.
+
+### IndexOf
+This function returns the index with the value that matches the supplied value in the table.
+
+**Arguments**
+- table: `table`
+  - The table to search in.
+- value: `any`
+  - The value to search for.
+
+### LastIndexOf
+This function returns the last index with the value that matches the supplied value in the table.
+
+**Arguments**
+- table: `table`
+  - The table to search in.
+- value: `any`
+  - The value to search for.
+
+### Find
+This function loops through the specified table and triggers the callback with the found item every time, if the callback returns true the item will be returned.
+
+**Arguments**
+- table: `table`
+  - The table to search in.
+- cb: `function`
+  - The callback to trigger on each item.
+
+### FindIndex
+This function loops through the specified table and triggers the callback with the found item every time, if the callback returns true the index gets returned.
+
+**Arguments**
+- table: `table`
+  - The table to search in.
+- cb: `function`
+  - The callback to trigger on each item.
+
+### Filter
+This function loops through the specified table and triggers the callback on each item, if the callback returns true it will be kept and later returned in the new table.
+
+**Arguments**
+- table: `table`
+  - The table to search in.
+- cb: `function`
+  - The callback to trigger on each item.
+
+### Map
+This function loops through the specified table and triggers the callback on each item, the returned value of the callback will be added to a table and later returnd.
+
+**Arguments**
+- table: `table`
+  - The table to search in.
+- cb: `function`
+  - The callback to trigger on each item.
+
+
+
+### Reverse
+This function loops through the specified table from the end and triggers the callback on each item, the returned value of the callback will be added to a table and later returnd.
+
+**Arguments**
+- table: `table`
+  - The table to search in.
+- cb: `function`
+  - The callback to trigger on each item.
+
+### Clone
+Clones the table
+
+**Arguments**
+- table: `table`
+  - The table to clone.
+
+### Concat
+Concats two tables, making them one table.
+
+**Arguments**
+- table1: `table`
+  - The first table to concat.
+- table2: `table`
+  - The second table to concat.
+
+**Example**
+```lua
+local firstTable = {
+    "the",
+    "best"
+}
+
+local secondTable = {
+    "framework",
+    "is",
+    "esx"
+}
+
+local concattedTable = ESX.Table.Concat(firstTable, secondTable)
+
+print(ESX.DumpTable(concattedTable))
+```
+
+### Join
+Joints the values of the tables into a string seperating them with the specified seperator
+
+**Arguments**
+- table: `table`
+  - The table to join.
+- seperator: `string`
+  - The seperator to use.
+
+**Example**
+```lua
+local myTable = {
+    "the",
+    "best",
+    "framework",
+    "is",
+    "esx"
+}
+
+print(ESX.Table.Join(myTable, " "))
+```
+
+### TableContains
+Returns if table contains specified value.
+
+**Arguments**
+- table: `table`
+  - The table to search in.
+- value: `any`
+  - The value to search for.
+
+**Example**
+```lua
+local myTable = {
+    "who",
+    "do",
+    "we",
+    "call?"
+}
+
+local containsGhostbusters = ESX.Table.TableContains(myTable, "Ghostbusters")
+
+if containsGhostbusters then
+    print("We sadly can't call the Ghostbusters :(")
+end
+```
+
+### Sort
+Sorts the table, custom sorting alogrithm can also be specified.
+[Check this for more information](https://stackoverflow.com/a/15706820)
+
+**Arguments**
+- table: `table`
+  - The table to sort.
+- order: `fun(t:table, a:unknown, b:unknown)?`
+  - The custom sorting function. Sorts the values in ascending order if none is provided.
+
+**Example**
+```lua
+local fruits = { "apple", "orange", "banana" }
+
+local sortedDesc = ESX.Table.Sort(fruits, function(t, a, b)
+    return a > b
+end)
+
+for key, value in sortedDesc do
+    print(key, value) -- prints: 3 banana, 2 orange, 1 apple
+end
+```
+
+### ToArray
+Converts a table into an array, keeping only the values and discarding the keys.
+
+**Arguments**
+- table: `table`
+  - The table to convert into an array.
+
+**Returns**
+- `array`: `Array`
+  - A new table that contains only the values from the original table, with the keys discarded.
+
+**Example**
+```lua
+local lobby = { hostSrc = 5, playerASrc = 12, playerBSrc = 3 }
+
+local serverIdsArray = ESX.Table.ToArray(lobby)
+
+ESX.TriggerClientEvent("resource:client:startLobby", serverIdsArray)
+```

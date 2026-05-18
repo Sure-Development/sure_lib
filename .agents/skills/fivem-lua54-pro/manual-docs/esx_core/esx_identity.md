@@ -1,0 +1,40 @@
+# esx_identity
+A script that allows the player to pick their characters name, gender, height and date of birth. Used by [es_extended](./es_extended) and [esx_multicharacter](./esx_multicharacter)
+
+<br />
+<img src="https://r2.fivemanage.com/SVPyt7tsQi4njkYd2eKX6/Screenshot2025-01-04021732.png" />
+<br />
+
+### Show Identity registration menu
+Show the identity registration menu
+
+**Example**
+```lua
+TriggerEvent("esx_identity:showRegisterIdentity")
+```
+
+### Listen to when a player completed the identity registration
+Listen to when a player completed the identity registration. Server Only
+
+**Arguments**
+- data: `table`
+  - The information of the registered identity.
+
+***data***
+- firstname: `string`
+  - The first name of the player.
+- lastname: `string`
+  - The last name of the player.
+- dateofbirth: `string`
+  - The date of birth of the player.
+- sex: `string`
+  - The sex of the player. Either m for male or f for female
+- height: `number`
+  - The height of the player.
+
+**Example**
+```lua
+AddEventHandler("esx_identity:completedRegistration", function(source, data)
+  print("Player with source " .. source .. " has registered their identity. And is called " .. data.firstname .. " " .. data.lastname)
+end)
+```

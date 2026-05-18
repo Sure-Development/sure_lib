@@ -1,0 +1,524 @@
+# PlayerData
+Different types of Player Data introduced by esx which contain information about the player and his current character.
+
+## How to get playerdata
+
+### Server
+You can get the playerdata by indexing the xPlayer object as it also contains everything(excluding client only data).
+
+### Client
+If you want to use PlayerData in your script you should use the import method to get the ESX object. 
+It automatically gets the ESX object for you and refreshes your locally saved PlayerData object.
+
+And can then accessed via ESX.PlayerData
+
+**Visualized example what is contained, not actual data**
+```lua
+    PlayerData = {
+        coords = vector3(0, 0, 0),
+        ped = PlayerPedId(),
+        group = "user",
+        identifier = "char1:1ee4f3096a4051f782385478ddd133f883114876",
+        ssn = "123-45-6789",
+        inventory = {},
+        job = {},
+        loadout = {},
+        name = "Knoblauchbrot",
+        playerId = 1,
+        source = 1,
+        variables = {},
+        weight = 12,
+        maxWeight = 24,
+        metadata = {},
+        admin = false,
+        license = "license:1ee4f3096a4051f782385478ddd133f883114876",
+        dateofbirth = "01/01/2000",
+        height = 181,
+        dead = false,
+        firstName = "John",
+        lastName = "Doe",
+        sex = 0,
+        money = 187,
+        accounts = {}
+    }
+```
+
+## PlayerLoaded
+This variable returns a `bool` if the player's character has finished loading.
+
+**Warning**
+    This function only exists on the **Clientside**!
+
+**Example**
+```lua 
+CreateThread(function()
+    while not ESX.PlayerLoaded do
+        Wait(1000)
+        print("Player has not loaded")
+    end
+end)
+```
+
+## PlayerData 
+
+### coords
+The player's last known coords and heading.
+
+- x: `number`
+  - The players coords on the x axis.
+- y: `number`
+  - The players coords on the y axis.
+- z: `number`
+  - The players coords on the z axis.
+- heading: `number`
+  - The players heading.
+
+**Server Example**
+```lua 
+local xPlayer = ESX.GetPlayerFromId(source)
+
+local pos = vector3(xPlayer.coords.x, xPlayer.coords.y, xPlayer.coords.z)
+if #(pos - vector3(124, 152, 26)) < 5 then
+    print("Player is in the range of 5 meters!")
+end
+```
+
+**Client Example**
+```lua 
+local pos = vector3(ESX.PlayerData.coords.x, ESX.PlayerData.coords.y, ESX.PlayerData.coords.z)
+if #(pos - vector3(124, 152, 26)) < 5 then
+    print("Player is in the range of 5 meters!")
+end
+```
+
+### ped
+The player's ped handle.
+
+**Server Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(source)
+
+local playerHealth = GetEntityHealth(xPlayer.ped) 
+print("player has " .. playerHealth .. " hp")
+```
+
+**Client Example**
+```lua
+local playerHealth = GetEntityHealth(ESX.PlayerData.ped) 
+print("player has " .. playerHealth .. " hp")
+```
+
+### group
+The player's group. (e.g. admin, user, vip)
+
+**Server Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(source)
+
+if xPlayer.group == "admin" then
+    print("Player is an admin")
+end
+```
+
+**Client Example**
+```lua 
+if ESX.PlayerData.group == "admin" then
+    print("Player is an admin")
+end
+```
+
+### identifier
+The player's rockstar identifier with charid.
+
+**Server Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(source)
+
+print("The player's identifier is: " .. xPlayer.identifier)
+```
+
+**Client Example**
+```lua 
+print("The player's identifier is: " .. ESX.PlayerData.identifier)
+```
+
+### ssn
+The player's unique Social Security Number (SSN).
+
+**Server Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(source)
+
+print("The player's SSN is: " .. xPlayer.ssn)
+``` 
+
+**Client Example**
+```lua
+print("The player's SSN is: " .. ESX.PlayerData.ssn)
+```
+
+### inventory
+The player's inventory `table`. This also includes items the player doesn't have but the item count will be 0, so make sure to always check for the count.
+
+**Values**
+- name: `string`
+  - The item name.
+- count: `number`
+  - The item count.
+- label: `string`
+  - The item label.
+- weight: `number`
+  - The item weight.
+- usable: `boolean`
+  - Does the item have a use callback?
+- rare: `boolean`
+  - Is the item rare?
+- canRemove: `boolean`
+  - Can the item be removed?
+
+
+**Server Example**
+```lua 
+local xPlayer = ESX.GetPlayerFromId(source)
+
+if xPlayer.inventory["bread"].count > 0 then
+    print("The player has bread")
+end
+```
+
+**Client Example**
+```lua 
+if ESX.PlayerData.inventory["bread"].count > 0 then
+    print("The player has bread")
+end
+```
+
+### job
+The player's job `table`.
+
+**Values**
+- id: `number`
+  - The job's id from the database.
+- name: `string`
+  - The job's name.
+- label: `string`
+  - The job's label.
+- grade: `string`
+  - The job's grade.
+- grade_name: `string`
+  - The job's grade name.
+- grade_label: `string`
+  - The job's grade label.
+- grade_salary: `string`
+  - The job's grade salary
+- skin_male: `table`
+  - The job's male grade skin/outfit
+- skin_female: `table`
+  - The job's female grade skin/outfit
+
+**Server Example**
+```lua 
+if xPlayer.job.name == "police" then
+    print("Player is a police officer")
+```
+
+**Client Example**
+```lua 
+if ESX.PlayerData.job.name == "police" then
+    print("Player is a police officer")
+    renderMarkers() -- Just an example, does not exist by default.
+end
+```
+
+### loadout
+The player's loadout.
+
+**Values**
+- name: `string`
+  - The weapon's name.
+- ammo: `number`
+  - The weapon's ammo.
+- label: `string`
+  - The weapon's label.
+- components: `table`
+  - The weapon's components.
+- tintIndex: `number`
+  - The weapon's tint.
+
+
+**Client Example**
+```lua
+for _, v in ipairs(ESX.PlayerData.loadout) do
+    local weaponName = v.name
+    local weaponHash = joaat(weaponName)
+
+    GiveWeaponToPed(ESX.PlayerData.ped, weaponHash, 0, false, false) -- Add weapon to player weaponwheel
+    SetPedWeaponTintIndex(ESX.PlayerData.ped, weaponHash, v.tintIndex) -- Set the design of the weapon
+end
+```
+
+### name
+The player's name.
+
+**Server Example**
+```lua 
+local xPlayer = ESX.GetPlayerFromId(source)
+
+print("The player is called: " .. xPlayer.name)
+```
+
+
+**Client Example**
+```lua 
+print("The player is called: " .. ESX.PlayerData.name)
+```
+
+### playerId
+The player's source.
+
+**Server Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(source)
+
+print("The player's server id/source': " .. xPlayer.playerId)
+```
+
+**Client Example**
+```lua 
+print("The player's server id/source': " .. ESX.PlayerData.playerId)
+```
+
+### source
+The player's source.
+
+**Server Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(source)
+
+print("The player's server id/source': " .. xPlayer.source)
+```
+
+**Client Example**
+```lua 
+print("The player's server id/source': " .. ESX.PlayerData.source)
+```
+
+### variables
+The player's variables that were set by the server. Inside an `table`.
+
+Can be set via [`xPlayer.set`](./server/xplayer.md#set) and get via [`xPlayer.get`](./server/xplayer.md#get) on serverside.
+
+### weight
+The player's current weight.
+
+**Client Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(source)
+
+print("The player's current weight is: " .. xPlayer.weight)
+```
+
+**Client Example**
+```lua 
+print("The player's current weight is: " .. ESX.PlayerData.weight)
+```
+
+### maxWeight
+The player's max weight
+
+**Server Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(source)
+
+local holdCapacity = xPlayer.maxWeight - xPlayer.weight
+print("The player can still hold " .. holdCapacity .. "kg")
+```
+
+**Client Example**
+```lua 
+local holdCapacity = ESX.PlayerData.maxWeight - ESX.PlayerData.weight
+print("The player can still hold " .. holdCapacity .. "kg")
+```
+
+### metadata
+The player's metadata set by the server.
+
+Can be set via [`xPlayer.setMeta`](./server/xplayer.md#setmeta) and get via [`xPlayer.getMeta`](./server/xplayer.md#getmeta) on serverside.
+
+### admin
+If the player is an admin.
+
+**Server Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(source)
+
+if xPlayer.admin then
+    print("Player is admin")
+end
+```
+
+**Client Example**
+```lua 
+if ESX.PlayerData.admin then
+    print("Player is admin")
+end
+```
+
+### license
+The player's rockstar identifier.
+
+**Server Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(source)
+
+print("The player's license is: " .. xPlayer.license)
+```
+
+**Client Example**
+```lua 
+print("The player's license is: " .. ESX.PlayerData.license)
+```
+
+### dateofbirth
+The player's character's date of birth.
+
+**Server Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(source)
+
+print("The character was born on: " .. xPlayer.dateofbirth)
+```
+
+**Client Example**
+```lua 
+print("The character was born on: " .. ESX.PlayerData.dateofbirth)
+```
+
+### height
+The player's character's height.
+
+**Server Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(source)
+
+print("The character's height is: " .. xPlayer.height)
+```
+
+**Client Example**
+```lua 
+print("The character's height is: " .. ESX.PlayerData.height)
+```
+
+### dead
+Is the player dead
+
+**Server Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(source)
+
+if xPlayer.dead then
+    print("Player is dead")
+else
+    print("Player is alive")
+end
+```
+
+**Client Example**
+```lua 
+if ESX.PlayerData.dead then
+    print("Player is dead")
+else
+    print("Player is alive")
+end
+```
+
+### firstName
+The character's firstname.
+
+**Server Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(source)
+
+print("The character is called: " .. xPlayer.firstName)
+```
+
+**Client Example**
+```lua 
+print("The character is called: " .. ESX.PlayerData.firstName)
+```
+
+### lastName
+The character's lastName.
+
+**Server Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(source)
+
+print("The character is called: " .. xPlayer.firstName .. " " .. xPlayer.lastName)
+```
+
+**Client Example**
+```lua 
+print("The character is called: " .. ESX.PlayerData.firstName .. " " .. xPlayer.lastName)
+```
+
+### sex
+The character's gender. `0` for male and `1` for female.
+
+**Server Example**
+```lua
+local xPlayer = ESX.GetPlayerFromId(source)
+
+if xPlayer.sex == 0 then
+    print("Player is male")
+elseif xPlayer.sex == 1 then
+    print("Player is female")
+end
+```
+
+**Client Example**
+```lua 
+if ESX.PlayerData.sex == 0 then
+    print("Player is male")
+elseif ESX.PlayerData.sex == 1 then
+    print("Player is female")
+end
+```
+
+### money
+The player's cash.
+
+**Info**
+    This function only exits for backwards compatibility. You should use [accounts](#accounts) instead.
+
+**Server Example**
+```lua 
+print("The player has $" .. xPlayer.money .. " cash")
+```
+
+**Client Example**
+```lua 
+print("The player has $" .. ESX.PlayerData.money .. " cash")
+```
+
+### accounts
+The player's accounts. A table
+
+**Values**
+- name: `string`
+  - The account name.
+- money: `number`
+  - The account balance.
+- label: `string`
+  - The account label.
+
+
+**Server Example**
+```lua 
+print("The player has $" .. xPlayer.accounts.bank .. " on his bank")
+```
+
+**Client Example**
+```lua 
+print("The player has $" .. ESX.PlayerData.accounts.bank .. " on his bank")
+```

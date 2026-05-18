@@ -1,0 +1,22 @@
+## Timeout
+
+### SetTimeout
+Sets a timeout for specified millisecond, after finishing the callback gets triggered.
+
+**Arguments**
+- msec: `number`
+  - The amount of milliseconds to wait.
+- cb: `function`
+  - The callback to trigger after the timeout.
+
+**Returns**
+- timeoutId: `number`
+  - The timeout id.
+
+
+### ClearTimeout
+Clears/Cancels the timeout. 
+
+**Arguments**
+- timeoutId: `number`
+  - The timeout to clear.

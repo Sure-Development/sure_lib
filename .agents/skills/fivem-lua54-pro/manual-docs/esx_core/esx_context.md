@@ -1,0 +1,253 @@
+# esx_context
+The context menu used by `es_extended`
+
+### OpenContext
+Open a context menu and enable mouse focus.
+
+**Arguments**
+- position: `string`
+  - The position the context should be displayed at.
+- elements: `table`
+  - Table with the elements that should be displayed.
+- canClose?: `boolean` (Default: `true`)
+  - Should the menu be able to be closed?
+- onSelect: `function`
+  - Function that gets ran when the client selects an element.
+- onClose: `function`
+  - Function that gets ran when the client clsoes the menu. 
+
+**Positions**
+- left
+- center
+- right
+
+**Elements**
+- uselectable: `boolean`
+  - Should selection be disabled?
+- disabled: `boolean`
+  - Should the button be disabled?
+- icon: `string`
+  - (Free) Fontawesome Icon or empty to hide icon?
+- title: `string`
+  - Title of the element.
+- description: `string`
+  - Description of the element.
+- input: `boolean`
+  - Allow input?
+- inputType: `"radio"` | `"number"` | `"text"`
+  - Type of the input.
+- inputPlaceholder: `string`
+  - Placeholder to show in input.
+- inputValue: `number` | `string`
+  - Default value
+- inputMin: `number`
+  - Minimum Value. Only works with type: "number"
+- inputMax: `number`
+  - Maximum Value. Only works with type: "number"
+- name: `string`
+  - Input key (later used when checking in code).
+
+**Example**
+```lua
+RegisterCommand('contextTest', function()
+    local formMenu = {
+        {
+            unselectable = true,
+            icon = 'fas fa-info-circle',
+            title = 'Unselectable Item (Header/Label?)',
+        },
+        {
+            icon = '',
+            title = 'Input Text',
+            input = true,
+            inputType = 'text',
+            inputPlaceholder = 'Placeholder...',
+            name = 'firstname',
+        },
+        {
+            icon = 'fas fa-check',
+            title = 'Submit',
+            name = 'submit'
+        }
+    }
+
+    ESX.OpenContext('right', formMenu, function(menu, element)
+        print('Element selected', element.title)
+
+		if element.name ~= 'submit' then
+			return
+		end
+
+		for _, element in ipairs(menu.eles) do
+			if element.input then
+				print(element.name, element.inputType, element.inputValue)
+			end
+		end
+
+        ESX.CloseContext()
+    end, function ()
+        print('Context closed')
+    end)
+end)
+```
+
+### PreviewContext
+Open context menu without enabling mouse focus.
+
+**Arguments**
+- position: `string`
+  - The position the context should be displayed at.
+- elements: `table`
+  - Table with the elements that should be displayed.
+- canClose?: `boolean` (Default: `true`)
+  - Should the menu be able to be closed?
+- onSelect: `function`
+  - Function that gets ran when the client selects an element.
+- onClose: `function`
+  - Function that gets ran when the client clsoes the menu. 
+
+**Positions**
+- left
+- center
+- right
+
+**Elements**
+- uselectable: `boolean`
+  - Should selection be disabled?
+- disabled: `boolean`
+  - Should the button be disabled?
+- icon: `string`
+  - (Free) Fontawesome Icon or empty to hide icon?
+- title: `string`
+  - Title of the element.
+- description: `string`
+  - Description of the element.
+- input: `boolean`
+  - Allow input?
+- inputType: `"radio"` | `"number"` | `"text"`
+  - Type of the input.
+- inputPlaceholder: `string`
+  - Placeholder to show in input.
+- inputValue: `number` | `string`
+  - Default value
+- inputMin: `number`
+  - Minimum Value. Only works with type: "number"
+- inputMax: `number`
+  - Maximum Value. Only works with type: "number"
+- name: `string`
+  - Input key (later used when checking in code).
+
+**Example**
+```lua
+RegisterCommand('contextTest', function()
+    local formMenu = {
+        {
+            unselectable = true,
+            icon = 'fas fa-info-circle',
+            title = 'Unselectable Item (Header/Label?)',
+        },
+        {
+            icon = '',
+            title = 'Input Text',
+            input = true,
+            inputType = 'text',
+            inputPlaceholder = 'Placeholder...',
+            name = 'firstname',
+        },
+        {
+            icon = 'fas fa-check',
+            title = 'Submit',
+            name = 'submit'
+        }
+    }
+
+    ESX.OpenContext('right', formMenu, function(menu, element)
+        print('Element selected', element.title)
+
+		if element.name ~= 'submit' then
+			return
+		end
+
+		for _, element in ipairs(menu.eles) do
+			if element.input then
+				print(element.name, element.inputType, element.inputValue)
+			end
+		end
+
+        ESX.CloseContext()
+    end, function ()
+        print('Context closed')
+    end)
+end)
+```
+
+### CloseContext
+This function closes the current open context.
+
+### RefreshContext
+This function updates the context menu.
+
+**Arguments**
+- position: `string`
+  - The position the context should be displayed at.
+- elements: `table`
+  - Table with the elements that should be displayed. 
+
+**Positions**
+- left
+- center
+- right
+
+**Elements**
+- uselectable: `boolean`
+  - Should selection be disabled?
+- disabled: `boolean`
+  - Should the button be disabled?
+- icon: `string`
+  - (Free) Fontawesome Icon or empty to hide icon?
+- title: `string`
+  - Title of the element.
+- description: `string`
+  - Description of the element.
+- input: `boolean`
+  - Allow input?
+- inputType: `"radio"` | `"number"` | `"text"`
+  - Type of the input.
+- inputPlaceholder: `string`
+  - Placeholder to show in input.
+- inputValue: `number` | `string`
+  - Default value
+- inputMin: `number`
+  - Minimum Value. Only works with type: "number"
+- inputMax: `number`
+  - Maximum Value. Only works with type: "number"
+- name: `string`
+  - Input key (later used when checking in code).
+
+**Example**
+```lua
+RegisterCommand('updateContext', function()
+    local formMenu = {
+        {
+            unselectable = true,
+            icon = 'fas fa-info-circle',
+            title = 'Really cool Header',
+        },
+        {
+            icon = '',
+            title = 'New Input Text',
+            input = true,
+            inputType = 'text',
+            inputPlaceholder = 'Placeholders are useful...',
+            name = 'firstname',
+        },
+        {
+            icon = 'fas fa-check',
+            title = 'Submit',
+            name = 'submit'
+        }
+    }
+
+    ESX.RefreshContext('right', formMenu)
+end)
+```
