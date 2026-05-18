@@ -4,27 +4,27 @@ game 'gta5'
 name 'Lib'
 description 'Sure (Lib)'
 version '2.0.0'
-git_version '1.2.1'
 lua54 'yes'
 use_experimental_fxv2_oal 'yes'
 
 shared_scripts {
 	'@ox_lib/init.lua',
-	'@es_extended/imports.lua',
-	'imports/shared.lua'
+	'shared/init.lua'
 }
 
 server_scripts {
-	'resources/server/**/*.lua'
+	'server/init.lua'
 }
 
 client_scripts {
-	'resources/client/**/*.lua'
+	'client/init.lua'
 }
 
 files {
-	'modules/**/*.lua',
-	'imports/shared.lua'
+	'init.lua',
+	'shared/init.lua',
+	'client/modules/**/*.lua',
+	'shared/modules/**/*.lua'
 }
 
 dependencies {
