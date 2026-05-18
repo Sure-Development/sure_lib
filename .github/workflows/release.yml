@@ -19,9 +19,9 @@ jobs:
         id: get_version
         shell: bash
         run: |
-          version=$(grep "git_version" fxmanifest.lua | awk -F"'" '{print $2}')
+          version=$(sed -nE 's/^[[:space:]]*version[[:space:]]+[\x27\x22]([^\x27\x22]+)[\x27\x22].*/\1/p' fxmanifest.lua | head -n 1)
           echo "Found version: $version"
-          if [ ! -z "$version" ]; then
+          if [ -n "$version" ]; then
             echo "version=$version" >> "$GITHUB_OUTPUT"
           else
             echo "Error: Version not found in fxmanifest.lua"
