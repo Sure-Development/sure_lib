@@ -2,6 +2,8 @@
 
 ## Verification
 
+Make sure you have updated @README.md if there's any data that readme must changed after codebase.
+
 Run these commands before handing off changes:
 
 ```bash

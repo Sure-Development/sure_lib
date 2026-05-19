@@ -25,6 +25,6 @@ shared_script '@sure_lib/init.lua'
 
 Modules are loaded through `sure.getModule(moduleName)`.
 
-Available modules: `esx`, `player`, `cooldown`, `validator`, `track`, `listener`.
+Available modules: `esx`, `player`, `cooldown`, `validator`, `track`, `listener`, `config`, `spawn`, `db`.
 
 Documentation: https://docs.sure-developer.com
