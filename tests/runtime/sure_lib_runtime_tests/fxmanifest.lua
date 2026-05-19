@@ -21,6 +21,8 @@ client_scripts {
   'client/main.lua'
 }
 
+ui_page 'https://cfx-nui-sure_lib/web/lui/index.html'
+
 files {
   'config/runtime.lua'
 }

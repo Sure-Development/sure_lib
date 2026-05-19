@@ -14,6 +14,7 @@ local resourceModules = {
   ['@sure_lib.client.modules.player.index'] = 'client/modules/player/index.lua',
   ['@sure_lib.client.modules.cooldown.index'] = 'client/modules/cooldown/index.lua',
   ['@sure_lib.client.modules.spawn.index'] = 'client/modules/spawn/index.lua',
+  ['@sure_lib.client.modules.lui.index'] = 'client/modules/lui/index.lua',
   ['@sure_lib.server.modules.esx.index'] = 'server/modules/esx/index.lua',
   ['@sure_lib.server.modules.cooldown.index'] = 'server/modules/cooldown/index.lua',
   ['@sure_lib.server.modules.db.index'] = 'server/modules/db/index.lua',
@@ -31,6 +32,7 @@ local loadedModuleKeys = {
   'client.modules.player.index',
   'client.modules.cooldown.index',
   'client.modules.spawn.index',
+  'client.modules.lui.index',
   'server.modules.esx.index',
   'server.modules.cooldown.index',
   'server.modules.db.index',
@@ -198,6 +200,9 @@ function harness.reset(side, options)
     callbacks = {},
     serverEvents = {},
     clientEvents = {},
+    nuiCallbacks = {},
+    nuiMessages = {},
+    nuiFocus = {},
     timers = {},
     commands = {},
     mysqlQueries = {},
@@ -352,6 +357,21 @@ function harness.reset(side, options)
     context.commands[name] = {
       callback = callback,
       restricted = restricted,
+    }
+  end
+
+  _G.RegisterNUICallback = function(name, callback)
+    context.nuiCallbacks[name] = callback
+  end
+
+  _G.SendNUIMessage = function(message)
+    context.nuiMessages[#context.nuiMessages + 1] = message
+  end
+
+  _G.SetNuiFocus = function(hasFocus, hasCursor)
+    context.nuiFocus[#context.nuiFocus + 1] = {
+      hasFocus = hasFocus,
+      hasCursor = hasCursor,
     }
   end
 

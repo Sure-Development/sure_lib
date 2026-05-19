@@ -3,7 +3,7 @@ game 'gta5'
 
 name 'Lib'
 description 'Sure (Lib)'
-version '2.1.0'
+version '2.2.0'
 lua54 'yes'
 use_experimental_fxv2_oal 'yes'
 
@@ -24,7 +24,8 @@ files {
 	'init.lua',
 	'shared/init.lua',
 	'client/modules/**/*.lua',
-	'shared/modules/**/*.lua'
+	'shared/modules/**/*.lua',
+	'web/lui/**/*'
 }
 
 dependencies {

@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --lui-accent: #18181b;
+  --lui-accent-foreground: #fafafa;
+  --lui-accent-soft: #f4f4f5;
+  --lui-background: transparent;
+  --lui-font: Inter, ui-sans-serif, system-ui, sans-serif;
+  --lui-ink: #09090b;
+  --lui-line: #e4e4e7;
+  --lui-muted: #71717a;
+  --lui-panel: #ffffff;
+  --lui-panel-soft: #f4f4f5;
+  font-family: var(--lui-font);
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent !important;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.lui-page {
+  min-height: 100vh;
+}

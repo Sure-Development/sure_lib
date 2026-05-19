@@ -1,0 +1,5 @@
+node_modules/
+ui/lui/node_modules/
+*.tsbuildinfo
+*.log
+ui/lui/.vite-dev*.log

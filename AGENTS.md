@@ -13,3 +13,10 @@ rtk git diff --check
 ```
 
 Use `rtk stylua .` to format Lua files before the checks when needed.
+
+When changing `ui/lui`, also run:
+
+```bash
+cd ui/lui
+rtk npm run build
+```

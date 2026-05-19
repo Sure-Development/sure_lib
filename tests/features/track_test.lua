@@ -47,3 +47,19 @@ h.test('track clones table values on read boundary', function()
 
   h.assertEqual(2, value().count)
 end)
+
+h.test('track functional setter composes concurrent increments from latest state', function()
+  h.reset('shared')
+  local reactive = h.load('shared/modules/track/index.lua')
+  local count, setCount = reactive.state('count', 0)
+
+  local increment = function(value)
+    return value + 1
+  end
+
+  setCount(increment)
+  setCount(increment)
+  setCount(increment)
+
+  h.assertEqual(3, count())
+end)

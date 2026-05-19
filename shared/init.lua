@@ -1,4 +1,4 @@
---- @alias SURELIB.MODULE_NAME 'esx'|'player'|'cooldown'|'validator'|'track'|'listener'|'spawn'|'config'|'db'
+--- @alias SURELIB.MODULE_NAME 'esx'|'player'|'cooldown'|'validator'|'track'|'listener'|'spawn'|'config'|'db'|'lui'
 
 ---@diagnostic disable-next-line: lowercase-global
 sure = sure or {}
@@ -29,6 +29,9 @@ local modulePaths = {
   },
   spawn = {
     client = 'client.modules.spawn.index',
+  },
+  lui = {
+    client = 'client.modules.lui.index',
   },
   config = {
     shared = 'shared.modules.config.index',

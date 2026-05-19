@@ -5,26 +5,29 @@ local clone = lib.table.deepclone
 local ipairs = ipairs
 local type = type
 
+local function copyValue(value)
+  if type(value) == 'table' then
+    return clone(value)
+  end
+
+  return value
+end
+
 --- @param stateName string
 --- @param initialValue any
---- @return any, fun(newValue: any)
+--- @return any, fun(newValue: any|fun(currentValue: any): any)
 function app.state(stateName, initialValue)
-  local data = nil
-  if type(initialValue) == 'table' then
-    data = clone(initialValue)
-  else
-    data = initialValue
-  end
+  local data = copyValue(initialValue)
 
   local getter = {}
 
   local setter = function(newValue)
+    if type(newValue) == 'function' then
+      newValue = newValue(copyValue(data))
+    end
+
     if newValue ~= data then
-      if type(newValue) == 'table' then
-        data = clone(newValue)
-      else
-        data = newValue
-      end
+      data = copyValue(newValue)
 
       local watcherIds = watcherIdsByState[stateName]
       if watcherIds then
@@ -45,7 +48,7 @@ function app.state(stateName, initialValue)
     },
 
     __call = function()
-      return data
+      return copyValue(data)
     end,
   }
 

@@ -11,6 +11,7 @@ local testFiles = {
   'tests.features.db_test',
   'tests.features.cooldown_test',
   'tests.features.spawn_test',
+  'tests.features.lui_test',
 }
 
 for _, file in ipairs(testFiles) do
