@@ -10,10 +10,13 @@ local resourceModules = {
   ['@sure_lib.shared.modules.validator.index'] = 'shared/modules/validator/index.lua',
   ['@sure_lib.shared.modules.track.index'] = 'shared/modules/track/index.lua',
   ['@sure_lib.shared.modules.listener.index'] = 'shared/modules/listener/index.lua',
+  ['@sure_lib.shared.modules.config.index'] = 'shared/modules/config/index.lua',
   ['@sure_lib.client.modules.player.index'] = 'client/modules/player/index.lua',
   ['@sure_lib.client.modules.cooldown.index'] = 'client/modules/cooldown/index.lua',
+  ['@sure_lib.client.modules.spawn.index'] = 'client/modules/spawn/index.lua',
   ['@sure_lib.server.modules.esx.index'] = 'server/modules/esx/index.lua',
   ['@sure_lib.server.modules.cooldown.index'] = 'server/modules/cooldown/index.lua',
+  ['@sure_lib.server.modules.db.index'] = 'server/modules/db/index.lua',
 }
 
 local loadedModuleKeys = {
@@ -24,10 +27,13 @@ local loadedModuleKeys = {
   'shared.modules.validator.index',
   'shared.modules.track.index',
   'shared.modules.listener.index',
+  'shared.modules.config.index',
   'client.modules.player.index',
   'client.modules.cooldown.index',
+  'client.modules.spawn.index',
   'server.modules.esx.index',
   'server.modules.cooldown.index',
+  'server.modules.db.index',
 }
 
 local function deepClone(value)
@@ -59,6 +65,56 @@ local function defaultEsx()
       return nil
     end,
   }
+end
+
+local function defaultOxmysql(context)
+  return {
+    query_async = function(_, sql, params)
+      context.mysqlQueries[#context.mysqlQueries + 1] = {
+        method = 'query_async',
+        sql = sql,
+        params = params or {},
+      }
+
+      return {}
+    end,
+    insert_async = function(_, sql, params)
+      context.mysqlQueries[#context.mysqlQueries + 1] = {
+        method = 'insert_async',
+        sql = sql,
+        params = params or {},
+      }
+
+      return 1
+    end,
+    update_async = function(_, sql, params)
+      context.mysqlQueries[#context.mysqlQueries + 1] = {
+        method = 'update_async',
+        sql = sql,
+        params = params or {},
+      }
+
+      return 1
+    end,
+    execute_async = function(_, sql, params)
+      context.mysqlQueries[#context.mysqlQueries + 1] = {
+        method = 'execute_async',
+        sql = sql,
+        params = params or {},
+      }
+
+      return true
+    end,
+  }
+end
+
+local function hashString(value)
+  local hash = 0
+  for index = 1, #value do
+    hash = hash + value:byte(index) * index
+  end
+
+  return hash
 end
 
 function harness.test(testName, callback)
@@ -143,6 +199,20 @@ function harness.reset(side, options)
     serverEvents = {},
     clientEvents = {},
     timers = {},
+    commands = {},
+    mysqlQueries = {},
+    resourceFiles = options.resourceFiles or {},
+    savedResourceFiles = {},
+    requestedModels = {},
+    requestedAnimDicts = {},
+    spawnedPeds = {},
+    spawnedObjects = {},
+    deletedEntities = {},
+    entityOptions = {},
+    points = {},
+    entities = {},
+    nextHandle = options.nextHandle or 1000,
+    currentTime = options.currentTime or 0,
     logs = {
       info = {},
       error = {},
@@ -170,6 +240,31 @@ function harness.reset(side, options)
         context.logs.error[#context.logs.error + 1] = message
       end,
     },
+    load = function(filePath, env)
+      context.loadedFiles = context.loadedFiles or {}
+      context.loadedFiles[#context.loadedFiles + 1] = {
+        filePath = filePath,
+        env = env,
+      }
+
+      local resourcePath = filePath
+      local content = context.resourceFiles[resourcePath]
+      if content == nil then
+        resourcePath = filePath:gsub('%.', '/') .. '.lua'
+        content = context.resourceFiles[resourcePath]
+      end
+
+      if content == nil then
+        error('file not found: ' .. filePath, 2)
+      end
+
+      local chunk, err = load(content, '@' .. resourcePath, 't', env)
+      if chunk == nil then
+        error(err, 2)
+      end
+
+      return chunk()
+    end,
     callback = {
       register = function(name, callback)
         context.callbacks[name] = callback
@@ -186,6 +281,16 @@ function harness.reset(side, options)
         end
 
         return value
+      end,
+    },
+    points = {
+      new = function(point)
+        function point:remove()
+          self.removed = true
+        end
+
+        context.points[#context.points + 1] = point
+        return point
       end,
     },
     timer = function(interval, callback, active)
@@ -226,7 +331,29 @@ function harness.reset(side, options)
         return options.esx or defaultEsx()
       end,
     },
+    oxmysql = options.oxmysql or defaultOxmysql(context),
   }
+
+  _G.GetCurrentResourceName = function()
+    return options.resourceName or 'sure_lib'
+  end
+
+  _G.LoadResourceFile = function(_, filePath)
+    return context.resourceFiles[filePath]
+  end
+
+  _G.SaveResourceFile = function(_, filePath, content)
+    context.resourceFiles[filePath] = content
+    context.savedResourceFiles[filePath] = content
+    return true
+  end
+
+  _G.RegisterCommand = function(name, callback, restricted)
+    context.commands[name] = {
+      callback = callback,
+      restricted = restricted,
+    }
+  end
 
   _G.RegisterNetEvent = function(name, callback)
     context.events[name] = callback
@@ -292,6 +419,158 @@ function harness.reset(side, options)
 
   _G.GetEntityCoords = function(ped)
     return ped == context.ped and context.coords or nil
+  end
+
+  _G.vector3 = function(x, y, z)
+    return {
+      x = x,
+      y = y,
+      z = z,
+    }
+  end
+
+  _G.vector4 = function(x, y, z, w)
+    return {
+      x = x,
+      y = y,
+      z = z,
+      w = w,
+    }
+  end
+
+  _G.GetHashKey = function(model)
+    if type(model) ~= 'string' then
+      return model
+    end
+
+    return options.modelHashes and options.modelHashes[model] or hashString(model)
+  end
+
+  _G.GetGameTimer = function()
+    context.currentTime = context.currentTime + 1
+    return context.currentTime
+  end
+
+  _G.RequestModel = function(modelHash)
+    context.requestedModels[#context.requestedModels + 1] = modelHash
+  end
+
+  _G.HasModelLoaded = function()
+    return options.modelLoaded ~= false
+  end
+
+  _G.CreatePed = function(pedType, modelHash, x, y, z, heading, networked, dynamic)
+    context.nextHandle = context.nextHandle + 1
+    local handle = context.nextHandle
+    context.entities[handle] = true
+    context.spawnedPeds[#context.spawnedPeds + 1] = {
+      handle = handle,
+      pedType = pedType,
+      modelHash = modelHash,
+      x = x,
+      y = y,
+      z = z,
+      heading = heading,
+      networked = networked,
+      dynamic = dynamic,
+    }
+
+    return handle
+  end
+
+  _G.CreateObjectNoOffset = function(modelHash, x, y, z, networked, door, dynamic)
+    context.nextHandle = context.nextHandle + 1
+    local handle = context.nextHandle
+    context.entities[handle] = true
+    context.spawnedObjects[#context.spawnedObjects + 1] = {
+      handle = handle,
+      modelHash = modelHash,
+      x = x,
+      y = y,
+      z = z,
+      networked = networked,
+      door = door,
+      dynamic = dynamic,
+    }
+
+    return handle
+  end
+
+  _G.FreezeEntityPosition = function(handle, value)
+    context.entityOptions[handle] = context.entityOptions[handle] or {}
+    context.entityOptions[handle].freeze = value
+  end
+
+  _G.SetEntityInvincible = function(handle, value)
+    context.entityOptions[handle] = context.entityOptions[handle] or {}
+    context.entityOptions[handle].invincible = value
+  end
+
+  _G.SetEntityCollision = function(handle, enabled)
+    context.entityOptions[handle] = context.entityOptions[handle] or {}
+    context.entityOptions[handle].collision = enabled
+  end
+
+  _G.SetEntityAlpha = function(handle, value)
+    context.entityOptions[handle] = context.entityOptions[handle] or {}
+    context.entityOptions[handle].alpha = value
+  end
+
+  _G.SetBlockingOfNonTemporaryEvents = function(handle, value)
+    context.entityOptions[handle] = context.entityOptions[handle] or {}
+    context.entityOptions[handle].blockEvents = value
+  end
+
+  _G.SetPedDiesWhenInjured = function(handle, value)
+    context.entityOptions[handle] = context.entityOptions[handle] or {}
+    context.entityOptions[handle].diesOnInjury = value
+  end
+
+  _G.RequestAnimDict = function(dict)
+    context.requestedAnimDicts[#context.requestedAnimDicts + 1] = dict
+  end
+
+  _G.HasAnimDictLoaded = function()
+    return options.animDictLoaded ~= false
+  end
+
+  _G.TaskStartScenarioInPlace = function(handle, scenario)
+    context.entityOptions[handle] = context.entityOptions[handle] or {}
+    context.entityOptions[handle].scenario = scenario
+  end
+
+  _G.TaskPlayAnim = function(handle, dict, clip, blendIn, blendOut, duration, flag)
+    context.entityOptions[handle] = context.entityOptions[handle] or {}
+    context.entityOptions[handle].animation = {
+      dict = dict,
+      clip = clip,
+      blendIn = blendIn,
+      blendOut = blendOut,
+      duration = duration,
+      flag = flag,
+    }
+  end
+
+  _G.SetEntityRotation = function(handle, x, y, z)
+    context.entityOptions[handle] = context.entityOptions[handle] or {}
+    context.entityOptions[handle].rotation = {
+      x = x,
+      y = y,
+      z = z,
+    }
+  end
+
+  _G.SetModelAsNoLongerNeeded = function(modelHash)
+    context.releasedModel = modelHash
+  end
+
+  _G.DoesEntityExist = function(handle)
+    return context.entities[handle] == true
+  end
+
+  _G.DeleteEntity = function(handle)
+    context.deletedEntities[#context.deletedEntities + 1] = handle
+    context.entities[handle] = nil
   end
 
   harness.registerResourceModules()

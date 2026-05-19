@@ -6,8 +6,11 @@ local testFiles = {
   'tests.features.listener_test',
   'tests.features.track_test',
   'tests.features.player_test',
+  'tests.features.config_test',
   'tests.features.esx_server_test',
+  'tests.features.db_test',
   'tests.features.cooldown_test',
+  'tests.features.spawn_test',
 }
 
 for _, file in ipairs(testFiles) do
