@@ -27,4 +27,4 @@ Modules are loaded through `sure.getModule(moduleName)`.
 
 Available modules: `esx`, `player`, `cooldown`, `validator`, `track`, `listener`.
 
-Full documentation will be added separately.
+Documentation: https://docs.sure-developer.com
