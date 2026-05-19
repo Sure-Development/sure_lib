@@ -30,7 +30,16 @@ jobs:
 
       - name: Create ZIP archive
         run: |
-          zip -r sure_lib.zip . -x ".git/*" ".github/*" "*.md" "LICENSE"
+          zip -r sure_lib.zip . \
+            -x ".git/*" \
+            -x ".github/*" \
+            -x ".codex/*" \
+            -x ".agents/*" \
+            -x "tests/*" \
+            -x "AGENTS.md" \
+            -x "RTK.md" \
+            -x "*.md" \
+            -x "LICENSE"
 
       - name: Create Release
         uses: ncipollo/release-action@v1
