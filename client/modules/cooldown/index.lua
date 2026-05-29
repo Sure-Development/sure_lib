@@ -1,5 +1,7 @@
 --- @type SURELIB.COOLDOWN.STRUCT
 local data = {}
+--- @type SURELIB.COOLDOWN.STRUCT
+local dataById = {}
 local definitions = {}
 local app = {}
 local ESX = exports.es_extended:getSharedObject()
@@ -10,6 +12,8 @@ local cooldownSetEvent = ('%s:lib:cooldownSet'):format(cache.resource)
 local cooldownSetByIndexEvent = ('%s:lib:cooldownSetByIndex'):format(cache.resource)
 local cooldownGetFirstTimeCallback = ('%s:lib:cooldownGetFirstTime'):format(cache.resource)
 local cooldownGetOrInitCallback = ('%s:lib:cooldownGetOrInit'):format(cache.resource)
+local cooldownSetByIdEvent = ('%s:lib:cooldownSetById'):format(cache.resource)
+local cooldownGetOrInitByIdCallback = ('%s:lib:cooldownGetOrInitById'):format(cache.resource)
 
 --- @param value number
 --- @return number
@@ -53,6 +57,17 @@ RegisterNetEvent(cooldownSetByIndexEvent, function(key, index, remainingMs)
   data[key][index] = remainingMs
 end)
 
+--- @param key string
+--- @param identifier string|integer
+--- @param remainingMs integer
+RegisterNetEvent(cooldownSetByIdEvent, function(key, identifier, remainingMs)
+  if dataById[key] == nil then
+    dataById[key] = {}
+  end
+
+  dataById[key][identifier] = remainingMs
+end)
+
 --- Returns the remaining cooldown for a key and position.
 --- @param key string
 --- @param position vector3
@@ -74,12 +89,39 @@ function app.getRemaining(key, position)
   return data[key][index]
 end
 
---- Starts or resets a cooldown.
+--- Starts or resets a cooldown by position.
 --- @param key string
 --- @param position vector3
 --- @param durationMs integer?
 function app.start(key, position, durationMs)
   TriggerServerEvent(cooldownSetEvent, key, position, durationMs)
+end
+
+--- Returns the remaining cooldown for a key and identifier.
+--- @param key string
+--- @param identifier string|integer
+--- @return integer?
+function app.getRemainingById(key, identifier)
+  if dataById[key] == nil then
+    dataById[key] = {}
+  end
+
+  if dataById[key][identifier] == nil then
+    local remainingMs = lib.callback.await(cooldownGetOrInitByIdCallback, false, key, identifier)
+    if type(remainingMs) == 'number' then
+      dataById[key][identifier] = remainingMs
+    end
+  end
+
+  return dataById[key][identifier]
+end
+
+--- Starts or resets a cooldown by identifier (player, ability, command, ...).
+--- @param key string
+--- @param identifier string|integer
+--- @param durationMs integer?
+function app.startById(key, identifier, durationMs)
+  TriggerServerEvent(cooldownSetByIdEvent, key, identifier, durationMs)
 end
 
 --- @param callback function
@@ -90,6 +132,11 @@ end
 --- @return SURELIB.COOLDOWN.STRUCT
 function app.all()
   return data
+end
+
+--- @return SURELIB.COOLDOWN.STRUCT
+function app.allById()
+  return dataById
 end
 
 --- @param key string
@@ -122,6 +169,7 @@ CreateThread(function()
 
   local firstTimeSync = lib.callback.await(cooldownGetFirstTimeCallback, false) or {}
   data = firstTimeSync.data or firstTimeSync
+  dataById = firstTimeSync.dataById or {}
   definitions = firstTimeSync.definitions or {}
 
   if type(app.readyCallback) == 'function' then
@@ -135,6 +183,14 @@ CreateThread(function()
       for index, remainingMs in pairs(list) do
         if remainingMs > 0 then
           data[key][index] = decrementRemaining(key, remainingMs)
+        end
+      end
+    end
+
+    for key, list in pairs(dataById) do
+      for identifier, remainingMs in pairs(list) do
+        if remainingMs > 0 then
+          dataById[key][identifier] = decrementRemaining(key, remainingMs)
         end
       end
     end

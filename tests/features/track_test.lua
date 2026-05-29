@@ -63,3 +63,35 @@ h.test('track functional setter composes concurrent increments from latest state
 
   h.assertEqual(3, count())
 end)
+
+h.test('track effect returns a dispose that stops notifications', function()
+  h.reset('shared')
+  local reactive = h.load('shared/modules/track/index.lua')
+  local count, setCount = reactive.state('count', 0)
+  local calls = 0
+
+  local dispose = reactive.effect(function()
+    calls = calls + 1
+  end, { count })
+
+  setCount(1)
+  dispose()
+  setCount(2)
+
+  h.assertEqual(1, calls)
+end)
+
+h.test('track computed derives a state from its dependencies', function()
+  h.reset('shared')
+  local reactive = h.load('shared/modules/track/index.lua')
+  local price, setPrice = reactive.state('price', 10)
+  local total = reactive.computed('total', function()
+    return price() * 2
+  end, { price })
+
+  h.assertEqual(20, total())
+
+  setPrice(15)
+
+  h.assertEqual(30, total())
+end)

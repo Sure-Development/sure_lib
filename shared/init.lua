@@ -1,4 +1,4 @@
---- @alias SURELIB.MODULE_NAME 'esx'|'player'|'cooldown'|'validator'|'track'|'listener'|'spawn'|'config'|'db'|'lui'
+--- @alias SURELIB.MODULE_NAME 'esx'|'player'|'cooldown'|'validator'|'track'|'hook'|'spawn'|'config'|'db'|'lui'|'log'|'keybind'
 
 ---@diagnostic disable-next-line: lowercase-global
 sure = sure or {}
@@ -24,11 +24,17 @@ local modulePaths = {
   track = {
     shared = 'shared.modules.track.index',
   },
-  listener = {
-    shared = 'shared.modules.listener.index',
+  hook = {
+    shared = 'shared.modules.hook.index',
+  },
+  log = {
+    shared = 'shared.modules.log.index',
   },
   spawn = {
     client = 'client.modules.spawn.index',
+  },
+  keybind = {
+    client = 'client.modules.keybind.index',
   },
   lui = {
     client = 'client.modules.lui.index',

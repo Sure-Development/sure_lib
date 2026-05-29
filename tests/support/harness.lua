@@ -9,11 +9,13 @@ local resourceModules = {
   ['@sure_lib.shared.init'] = 'shared/init.lua',
   ['@sure_lib.shared.modules.validator.index'] = 'shared/modules/validator/index.lua',
   ['@sure_lib.shared.modules.track.index'] = 'shared/modules/track/index.lua',
-  ['@sure_lib.shared.modules.listener.index'] = 'shared/modules/listener/index.lua',
+  ['@sure_lib.shared.modules.hook.index'] = 'shared/modules/hook/index.lua',
+  ['@sure_lib.shared.modules.log.index'] = 'shared/modules/log/index.lua',
   ['@sure_lib.shared.modules.config.index'] = 'shared/modules/config/index.lua',
   ['@sure_lib.client.modules.player.index'] = 'client/modules/player/index.lua',
   ['@sure_lib.client.modules.cooldown.index'] = 'client/modules/cooldown/index.lua',
   ['@sure_lib.client.modules.spawn.index'] = 'client/modules/spawn/index.lua',
+  ['@sure_lib.client.modules.keybind.index'] = 'client/modules/keybind/index.lua',
   ['@sure_lib.client.modules.lui.index'] = 'client/modules/lui/index.lua',
   ['@sure_lib.client.modules.lui.blueprint'] = 'client/modules/lui/blueprint.lua',
   ['@sure_lib.client.modules.lui.builder'] = 'client/modules/lui/builder.lua',
@@ -33,11 +35,13 @@ local loadedModuleKeys = {
   'shared.init',
   'shared.modules.validator.index',
   'shared.modules.track.index',
-  'shared.modules.listener.index',
+  'shared.modules.hook.index',
+  'shared.modules.log.index',
   'shared.modules.config.index',
   'client.modules.player.index',
   'client.modules.cooldown.index',
   'client.modules.spawn.index',
+  'client.modules.keybind.index',
   'client.modules.lui.index',
   'client.modules.lui.blueprint',
   'client.modules.lui.builder',
@@ -343,9 +347,28 @@ function harness.reset(side, options)
 
       return class
     end,
+    addKeybind = options.addKeybind or function(spec)
+      context.keybinds = context.keybinds or {}
+      context.keybinds[#context.keybinds + 1] = spec
+
+      local instance = {
+        spec = spec,
+        disabled = false,
+      }
+
+      function instance:disable(value)
+        instance.disabled = value
+      end
+
+      return instance
+    end,
   }
 
-  _G.exports = {
+  local currentResource = options.resourceName or 'sure_lib'
+  context.exportRegistry = {}
+  context.invokingStack = {}
+
+  local staticExports = {
     es_extended = {
       getSharedObject = function()
         return options.esx or defaultEsx()
@@ -354,8 +377,83 @@ function harness.reset(side, options)
     oxmysql = options.oxmysql or defaultOxmysql(context),
   }
 
+  local function buildResourceProxy(resourceName)
+    local proxy = {}
+    return setmetatable(proxy, {
+      __index = function(_, fnName)
+        local registry = context.exportRegistry[resourceName]
+        if registry == nil or registry[fnName] == nil then
+          return nil
+        end
+
+        local fn = registry[fnName]
+        return function(...)
+          local args = { ... }
+          if args[1] == proxy then
+            table.remove(args, 1)
+          end
+
+          context.invokingStack[#context.invokingStack + 1] = currentResource
+          local ok, result = pcall(fn, table.unpack(args))
+          context.invokingStack[#context.invokingStack] = nil
+
+          if not ok then
+            error(result, 2)
+          end
+
+          return result
+        end
+      end,
+    })
+  end
+
+  _G.exports = setmetatable({}, {
+    __call = function(_, name, fn)
+      if type(name) ~= 'string' or type(fn) ~= 'function' then
+        return
+      end
+
+      local registry = context.exportRegistry[currentResource]
+      if registry == nil then
+        registry = {}
+        context.exportRegistry[currentResource] = registry
+      end
+
+      registry[name] = fn
+    end,
+    __index = function(_, resourceName)
+      if staticExports[resourceName] ~= nil then
+        return staticExports[resourceName]
+      end
+
+      return buildResourceProxy(resourceName)
+    end,
+  })
+
   _G.GetCurrentResourceName = function()
-    return options.resourceName or 'sure_lib'
+    return currentResource
+  end
+
+  _G.GetInvokingResource = function()
+    return context.invokingStack[#context.invokingStack]
+  end
+
+  context.setInvokingResource = function(name)
+    context.invokingStack[#context.invokingStack + 1] = name
+  end
+
+  context.clearInvokingResource = function()
+    context.invokingStack[#context.invokingStack] = nil
+  end
+
+  context.registerExternalExport = function(resourceName, fnName, fn)
+    local registry = context.exportRegistry[resourceName]
+    if registry == nil then
+      registry = {}
+      context.exportRegistry[resourceName] = registry
+    end
+
+    registry[fnName] = fn
   end
 
   _G.LoadResourceFile = function(_, filePath)
@@ -403,6 +501,33 @@ function harness.reset(side, options)
       name = name,
       args = { ... },
     }
+  end
+
+  _G.TriggerEvent = function(name, ...)
+    context.localEvents = context.localEvents or {}
+    context.localEvents[#context.localEvents + 1] = {
+      name = name,
+      args = { ... },
+    }
+    local handler = context.events[name]
+    if handler ~= nil then
+      handler(...)
+    end
+  end
+
+  _G.GetResourceState = function(resource)
+    local states = options.resourceStates or {}
+    return states[resource] or 'started'
+  end
+
+  _G.GetResourceMetadata = function(resource, key)
+    local metadata = options.resourceMetadata or {}
+    local entry = metadata[resource]
+    if type(entry) == 'table' then
+      return entry[key]
+    end
+
+    return nil
   end
 
   _G.TriggerClientEvent = function(name, target, ...)

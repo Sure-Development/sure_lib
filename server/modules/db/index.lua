@@ -107,6 +107,63 @@ local function buildWhere(where)
   return ' WHERE ' .. table.concat(clauses, ' AND '), params
 end
 
+local function buildSelect(fields)
+  if type(fields) ~= 'table' or #fields == 0 then
+    return '*'
+  end
+
+  local parts = {}
+  for index, field in ipairs(fields) do
+    parts[index] = quoteIdentifier(field)
+  end
+
+  return table.concat(parts, ', ')
+end
+
+local function buildOrderBy(orderBy)
+  if type(orderBy) ~= 'table' or #orderBy == 0 then
+    return ''
+  end
+
+  local parts = {}
+  for _, entry in ipairs(orderBy) do
+    local column
+    local direction = 'ASC'
+
+    if type(entry) == 'string' then
+      column = entry
+    elseif type(entry) == 'table' then
+      column = entry[1] or entry.column
+      local raw = entry[2] or entry.direction
+      if type(raw) == 'string' and raw:lower() == 'desc' then
+        direction = 'DESC'
+      end
+    end
+
+    if column ~= nil then
+      parts[#parts + 1] = quoteIdentifier(column) .. ' ' .. direction
+    end
+  end
+
+  if #parts == 0 then
+    return ''
+  end
+
+  return ' ORDER BY ' .. table.concat(parts, ', ')
+end
+
+local function buildLimitOffset(limit, offset)
+  local output = ''
+  if type(limit) == 'number' then
+    output = output .. ' LIMIT ' .. math.floor(limit)
+  end
+  if type(offset) == 'number' then
+    output = output .. ' OFFSET ' .. math.floor(offset)
+  end
+
+  return output
+end
+
 local function hasWhere(where)
   return type(where) == 'table' and next(where) ~= nil
 end
@@ -170,36 +227,40 @@ local function formatSqlDefault(value)
   return quoteString(value)
 end
 
+local function fieldDefinitionParts(fieldName, field)
+  local parts = {
+    quoteIdentifier(fieldName),
+    fieldSqlType(field),
+  }
+
+  if field.nullable == false then
+    parts[#parts + 1] = 'NOT NULL'
+  end
+
+  if field.default ~= nil then
+    parts[#parts + 1] = 'DEFAULT ' .. formatSqlDefault(field.default)
+  end
+
+  if field.autoIncrement == true then
+    parts[#parts + 1] = 'AUTO_INCREMENT'
+  end
+
+  if field.unique == true then
+    parts[#parts + 1] = 'UNIQUE'
+  end
+
+  return parts
+end
+
 local function buildCreateTableSql(tableName, fields)
   local columns = {}
   local primaryKey = nil
 
   for _, fieldInfo in ipairs(orderedFields(fields)) do
-    local fieldName = fieldInfo.name
-    local field = fieldInfo.field
-    local parts = {
-      quoteIdentifier(fieldName),
-      fieldSqlType(field),
-    }
+    local parts = fieldDefinitionParts(fieldInfo.name, fieldInfo.field)
 
-    if field.nullable == false then
-      parts[#parts + 1] = 'NOT NULL'
-    end
-
-    if field.default ~= nil then
-      parts[#parts + 1] = 'DEFAULT ' .. formatSqlDefault(field.default)
-    end
-
-    if field.autoIncrement == true then
-      parts[#parts + 1] = 'AUTO_INCREMENT'
-    end
-
-    if field.unique == true then
-      parts[#parts + 1] = 'UNIQUE'
-    end
-
-    if field.primaryKey == true then
-      primaryKey = fieldName
+    if fieldInfo.field.primaryKey == true then
+      primaryKey = fieldInfo.name
     end
 
     columns[#columns + 1] = table.concat(parts, ' ')
@@ -221,8 +282,11 @@ local function modelFor(schemaName, definition)
 
   function model:findMany(query)
     query = query or {}
+    local selectClause = buildSelect(query.select)
     local whereSql, params = buildWhere(query.where)
-    local sql = 'SELECT * FROM ' .. quoteIdentifier(self.tableName) .. whereSql
+    local orderSql = buildOrderBy(query.orderBy)
+    local limitSql = buildLimitOffset(query.limit, query.offset)
+    local sql = 'SELECT ' .. selectClause .. ' FROM ' .. quoteIdentifier(self.tableName) .. whereSql .. orderSql .. limitSql
 
     return runQuery({}, function()
       return exports.oxmysql:query_async(sql, params)
@@ -231,13 +295,31 @@ local function modelFor(schemaName, definition)
 
   function model:findFirst(query)
     query = query or {}
+    local selectClause = buildSelect(query.select)
     local whereSql, params = buildWhere(query.where)
-    local sql = 'SELECT * FROM ' .. quoteIdentifier(self.tableName) .. whereSql .. ' LIMIT 1'
+    local orderSql = buildOrderBy(query.orderBy)
+    local sql = 'SELECT ' .. selectClause .. ' FROM ' .. quoteIdentifier(self.tableName) .. whereSql .. orderSql .. ' LIMIT 1'
 
     return runQuery(nil, function()
       local rows = exports.oxmysql:query_async(sql, params)
       return rows and rows[1] or nil
     end)
+  end
+
+  function model:count(query)
+    query = query or {}
+    local whereSql, params = buildWhere(query.where)
+    local sql = 'SELECT COUNT(*) AS `count` FROM ' .. quoteIdentifier(self.tableName) .. whereSql
+
+    local rows = runQuery({}, function()
+      return exports.oxmysql:query_async(sql, params)
+    end)
+
+    if type(rows) == 'table' and rows[1] ~= nil then
+      return tonumber(rows[1].count) or 0
+    end
+
+    return 0
   end
 
   function model:create(query)
@@ -255,6 +337,88 @@ local function modelFor(schemaName, definition)
     end
 
     local sql = 'INSERT INTO ' .. quoteIdentifier(self.tableName) .. ' (' .. table.concat(columns, ', ') .. ') VALUES (' .. table.concat(placeholders, ', ') .. ')'
+
+    return runQuery(nil, function()
+      return exports.oxmysql:insert_async(sql, params)
+    end)
+  end
+
+  function model:bulkInsert(query)
+    query = query or {}
+    local rows = query.data
+    if type(rows) ~= 'table' or #rows == 0 then
+      return nil
+    end
+
+    local columnSet = {}
+    for _, row in ipairs(rows) do
+      for key in pairs(row) do
+        columnSet[key] = true
+      end
+    end
+
+    local columns = sortedKeys(columnSet)
+    local quotedCols = {}
+    local placeholderRow = {}
+
+    for index, column in ipairs(columns) do
+      quotedCols[index] = quoteIdentifier(column)
+      placeholderRow[index] = '?'
+    end
+
+    local placeholderJoined = '(' .. table.concat(placeholderRow, ', ') .. ')'
+
+    local valuesParts = {}
+    local params = {}
+    for index, row in ipairs(rows) do
+      valuesParts[index] = placeholderJoined
+      for _, column in ipairs(columns) do
+        params[#params + 1] = row[column]
+      end
+    end
+
+    local sql = 'INSERT INTO ' .. quoteIdentifier(self.tableName) .. ' (' .. table.concat(quotedCols, ', ') .. ') VALUES ' .. table.concat(valuesParts, ', ')
+
+    return runQuery(nil, function()
+      return exports.oxmysql:insert_async(sql, params)
+    end)
+  end
+
+  function model:upsert(query)
+    query = query or {}
+    local data = query.data or {}
+    if next(data) == nil then
+      logError('[sure_lib][db] upsert requires data on table: ' .. self.tableName)
+      return nil
+    end
+
+    local update = query.update or data
+    local keys = sortedKeys(data)
+    local columns = {}
+    local placeholders = {}
+    local params = {}
+
+    for index, key in ipairs(keys) do
+      columns[index] = quoteIdentifier(key)
+      placeholders[index] = '?'
+      params[index] = data[key]
+    end
+
+    local updateKeys = sortedKeys(update)
+    local assignments = {}
+    for _, key in ipairs(updateKeys) do
+      assignments[#assignments + 1] = quoteIdentifier(key) .. ' = ?'
+      params[#params + 1] = update[key]
+    end
+
+    local sql = 'INSERT INTO '
+      .. quoteIdentifier(self.tableName)
+      .. ' ('
+      .. table.concat(columns, ', ')
+      .. ') VALUES ('
+      .. table.concat(placeholders, ', ')
+      .. ') ON DUPLICATE KEY UPDATE '
+      .. table.concat(assignments, ', ')
 
     return runQuery(nil, function()
       return exports.oxmysql:insert_async(sql, params)
@@ -319,6 +483,25 @@ function db:schema(schemaName, definition)
   return modelFor(schemaName, definition or {})
 end
 
+--- Run a batch of statements inside a single oxmysql transaction.
+--- @param queries { query: string, values: any[]? }[]
+--- @return boolean
+function db:transaction(queries)
+  if type(queries) ~= 'table' or #queries == 0 then
+    return false
+  end
+
+  local result = runQuery(false, function()
+    return exports.oxmysql:transaction_async(queries)
+  end)
+
+  if result == nil then
+    return false
+  end
+
+  return result and true or false
+end
+
 local function loadSchemaFile(schemaName)
   local filePath = 'db/' .. schemaName .. '.lua'
   local content = LoadResourceFile(GetCurrentResourceName(), filePath)
@@ -371,6 +554,16 @@ local function loadSchemaFile(schemaName)
   return schema
 end
 
+local function existingColumns(tableName)
+  return runQuery({}, function()
+    return exports.oxmysql:query_async(
+      [[SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = ? AND TABLE_SCHEMA = DATABASE()]],
+      { tableName }
+    )
+  end)
+end
+
 local function pushSchema(schemaName)
   local schema = loadSchemaFile(schemaName)
   if schema == nil then
@@ -378,7 +571,47 @@ local function pushSchema(schemaName)
   end
 
   local tableName = schema.tableName or schemaName
-  local sql = buildCreateTableSql(tableName, schema.fields or {})
+  local fields = schema.fields or {}
+
+  local existing = existingColumns(tableName)
+  if type(existing) ~= 'table' then
+    existing = {}
+  end
+
+  if #existing == 0 then
+    local sql = buildCreateTableSql(tableName, fields)
+    local ok, err = pcall(function()
+      return exports.oxmysql:execute_async(sql, {})
+    end)
+
+    if not ok then
+      printQueryError(err)
+      return
+    end
+
+    logInfo("[sure_lib][db] pushed -> table '" .. tableName .. "' is ready")
+    return
+  end
+
+  local existingSet = {}
+  for _, row in ipairs(existing) do
+    existingSet[row.COLUMN_NAME] = true
+  end
+
+  local additions = {}
+  for _, fieldInfo in ipairs(orderedFields(fields)) do
+    if not existingSet[fieldInfo.name] then
+      local parts = fieldDefinitionParts(fieldInfo.name, fieldInfo.field)
+      additions[#additions + 1] = 'ADD COLUMN ' .. table.concat(parts, ' ')
+    end
+  end
+
+  if #additions == 0 then
+    logInfo("[sure_lib][db] table '" .. tableName .. "' is already up to date")
+    return
+  end
+
+  local sql = 'ALTER TABLE ' .. quoteIdentifier(tableName) .. ' ' .. table.concat(additions, ', ')
 
   local ok, err = pcall(function()
     return exports.oxmysql:execute_async(sql, {})
@@ -389,7 +622,7 @@ local function pushSchema(schemaName)
     return
   end
 
-  logInfo("[sure_lib][db] pushed -> table '" .. tableName .. "' is ready")
+  logInfo(("[sure_lib][db] pushed -> table '%s' altered (%d column(s) added)"):format(tableName, #additions))
 end
 
 local function mysqlTypeToField(columnType)
