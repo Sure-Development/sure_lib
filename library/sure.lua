@@ -200,27 +200,27 @@ function sure.getModule(name) end
 ---@field patch fun(self: SureSliceInstance, stateKey: string, itemKey: string|number, partial: table): SureSliceInstance
 ---@field removeBy fun(self: SureSliceInstance, stateKey: string, predicate: fun(item: table): boolean): SureSliceInstance
 ---@field interact fun(self: SureSliceInstance, stateKey: string, spec: SureSliceInteractSpec): fun()
+---@field transaction fun(self: SureSliceInstance, fn: fun(slice: SureSliceInstance)): SureSliceInstance
+---@field scope fun(self: SureSliceInstance, name: string): SureSliceScope
 
 ---@class SureSliceInteractContext
----@field entity integer?
----@field point any?
+---@field entity? integer
+---@field point? any
 
 ---@class SureSliceInteractSpawn
 ---@field type 'ped'|'object'
----@field modelFrom string?
----@field coordsFrom string?
----@field headingFrom string?
----@field options table?
+---@field modelFrom? string
+---@field coordsFrom? string
+---@field headingFrom? string
+---@field options? table
 
 ---@class SureSliceInteractSpec
----@field spawn SureSliceInteractSpawn?
----@field coordsFrom string?
----@field distanceFrom string?
----@field onEnter fun(slice: SureSliceInstance, item: table, ctx: SureSliceInteractContext)?
----@field onExit fun(slice: SureSliceInstance, item: table, ctx: SureSliceInteractContext)?
----@field nearby fun(slice: SureSliceInstance, item: table, ctx: SureSliceInteractContext): boolean?
----@field transaction fun(self: SureSliceInstance, fn: fun(slice: SureSliceInstance)): SureSliceInstance
----@field scope fun(self: SureSliceInstance, name: string): SureSliceScope
+---@field spawn? SureSliceInteractSpawn
+---@field coordsFrom? string
+---@field distanceFrom? string
+---@field onEnter? fun(slice: SureSliceInstance, item: table, ctx: SureSliceInteractContext)
+---@field onExit? fun(slice: SureSliceInstance, item: table, ctx: SureSliceInteractContext)
+---@field nearby? fun(slice: SureSliceInstance, item: table, ctx: SureSliceInteractContext): boolean?
 
 ---@class SureSliceScope
 ---@field name string
@@ -233,23 +233,23 @@ function sure.getModule(name) end
 
 ---@class SureSliceNetSyncConfig
 ---@field direction SureSliceNetSyncDirection
----@field scope string?
----@field diff boolean?
+---@field scope? string
+---@field diff? boolean
 
 ---@alias SureSliceRefCleanup fun()
 ---@alias SureSliceRefHandler fun(item: table, index: integer): SureSliceRefCleanup?
 
 ---@class SureSliceSpec
----@field state table?
----@field actions table<string, function>?
----@field on table<string, function>?
----@field net table<string, function>?
----@field watch table<string, function>?
----@field commands table<string, function>?
----@field every table<integer, function>?
----@field netSync table<string, SureSliceNetSyncDirection|SureSliceNetSyncConfig>?
----@field onLoad function?
----@field onUnload function?
+---@field state? table
+---@field actions? table<string, function>
+---@field on? table<string, function>
+---@field net? table<string, function>
+---@field watch? table<string, function>
+---@field commands? table<string, function>
+---@field every? table<integer, function>
+---@field netSync? table<string, SureSliceNetSyncDirection|SureSliceNetSyncConfig>
+---@field onLoad? function
+---@field onUnload? function
 
 --- Create a slice. Extend `SureSliceInstance` with a typed `state` field
 --- to drive autocomplete on every handler:
