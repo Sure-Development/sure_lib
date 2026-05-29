@@ -132,6 +132,7 @@ return slice 'world' {
 - Each item must expose a `key` field (`string` or `number`).
 - Return a function from `fn` to register a cleanup; omit the return for no-op cleanup.
 - `ref` returns a `dispose` function that unmounts every active item and stops watching. Every active ref also auto-disposes on `onResourceStop` for the current resource, after `spec.onUnload` runs.
+- Array mutation helpers `slice:push(stateKey, item)`, `slice:patch(stateKey, itemKey, partial)`, and `slice:removeBy(stateKey, predicate)` filter + reassign the array so watchers and netSync diffs fire correctly without hand-written loops.
 - The watcher fires when the array reference changes — assign a new table to `state.<key>` to trigger reconciliation.
 
 For Lua UI, point your resource NUI page at the bundled renderer:

@@ -300,6 +300,112 @@ local function buildSlice(name, spec)
     return copy
   end
 
+  function slice:push(stateKey, item)
+    if type(stateKey) ~= 'string' or stateKey == '' then
+      error('[sure_lib][slice] push: stateKey must be a non-empty string', 2)
+    end
+
+    if type(item) ~= 'table' then
+      error('[sure_lib][slice] push: item must be a table', 2)
+    end
+
+    local list = rawState[stateKey]
+    local next = {}
+    if type(list) == 'table' then
+      for index, existing in ipairs(list) do
+        next[index] = existing
+      end
+    end
+
+    next[#next + 1] = item
+    state[stateKey] = next
+
+    return self
+  end
+
+  function slice:patch(stateKey, itemKey, partial)
+    if type(stateKey) ~= 'string' or stateKey == '' then
+      error('[sure_lib][slice] patch: stateKey must be a non-empty string', 2)
+    end
+
+    if itemKey == nil then
+      error('[sure_lib][slice] patch: itemKey is required', 2)
+    end
+
+    if type(partial) ~= 'table' then
+      error('[sure_lib][slice] patch: partial must be a table', 2)
+    end
+
+    local list = rawState[stateKey]
+    if type(list) ~= 'table' then
+      return self
+    end
+
+    local next = {}
+    local touched = false
+    for index, existing in ipairs(list) do
+      if type(existing) == 'table' and existing.key == itemKey then
+        local merged = {}
+        for key, value in pairs(existing) do
+          merged[key] = value
+        end
+        for key, value in pairs(partial) do
+          merged[key] = value
+        end
+        merged.key = existing.key
+        next[index] = merged
+        touched = true
+      else
+        next[index] = existing
+      end
+    end
+
+    if touched then
+      state[stateKey] = next
+    end
+
+    return self
+  end
+
+  function slice:removeBy(stateKey, predicate)
+    if type(stateKey) ~= 'string' or stateKey == '' then
+      error('[sure_lib][slice] removeBy: stateKey must be a non-empty string', 2)
+    end
+
+    if type(predicate) ~= 'function' then
+      error('[sure_lib][slice] removeBy: predicate must be a function', 2)
+    end
+
+    local list = rawState[stateKey]
+    if type(list) ~= 'table' then
+      return self
+    end
+
+    local next = {}
+    local removed = false
+    for _, existing in ipairs(list) do
+      local drop = false
+      local ok, result = pcall(predicate, existing)
+      if ok then
+        drop = result == true
+      else
+        slice.log.error(('removeBy(%s) predicate failed: %s'):format(stateKey, tostring(result)))
+      end
+
+      if drop then
+        removed = true
+      else
+        next[#next + 1] = existing
+      end
+    end
+
+    if removed then
+      state[stateKey] = next
+    end
+
+    return self
+  end
+
   function slice:unmount(stateKey, itemKey)
     if type(stateKey) ~= 'string' or stateKey == '' then
       error('[sure_lib][slice] unmount: stateKey must be a non-empty string', 2)

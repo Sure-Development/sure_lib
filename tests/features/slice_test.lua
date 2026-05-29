@@ -445,6 +445,125 @@ h.test('slice ref auto-dispose runs after spec.onUnload', function()
   h.assertEqual('refDispose', order[2])
 end)
 
+h.test('slice push appends an item and triggers watchers', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local fired = 0
+
+  local world = slice('world')({
+    state = { entities = { { key = 'a', value = 1 } } },
+    watch = {
+      entities = function()
+        fired = fired + 1
+      end,
+    },
+  })
+
+  world:push('entities', { key = 'b', value = 2 })
+
+  h.assertEqual(2, #world.state.entities)
+  h.assertEqual('b', world.state.entities[2].key)
+  h.assertEqual(1, fired)
+end)
+
+h.test('slice patch merges partial into the item with matching key', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', value = 1, label = 'one' },
+        { key = 'b', value = 2, label = 'two' },
+      },
+    },
+  })
+
+  world:patch('entities', 'a', { value = 99 })
+
+  h.assertEqual(99, world.state.entities[1].value)
+  h.assertEqual('one', world.state.entities[1].label)
+  h.assertEqual('a', world.state.entities[1].key)
+  h.assertEqual(2, world.state.entities[2].value)
+end)
+
+h.test('slice patch is a no-op when no item matches the key', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local fired = 0
+
+  local world = slice('world')({
+    state = { entities = { { key = 'a', value = 1 } } },
+    watch = {
+      entities = function()
+        fired = fired + 1
+      end,
+    },
+  })
+
+  world:patch('entities', 'ghost', { value = 99 })
+
+  h.assertEqual(0, fired)
+end)
+
+h.test('slice patch ignores attempts to overwrite the key field', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = { entities = { { key = 'a', value = 1 } } },
+  })
+
+  world:patch('entities', 'a', { key = 'hijacked', value = 7 })
+
+  h.assertEqual('a', world.state.entities[1].key)
+  h.assertEqual(7, world.state.entities[1].value)
+end)
+
+h.test('slice removeBy drops items whose predicate returns true', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', value = 1 },
+        { key = 'b', value = 2 },
+        { key = 'c', value = 3 },
+      },
+    },
+  })
+
+  world:removeBy('entities', function(item)
+    return item.value % 2 == 0
+  end)
+
+  h.assertEqual(2, #world.state.entities)
+  h.assertEqual('a', world.state.entities[1].key)
+  h.assertEqual('c', world.state.entities[2].key)
+end)
+
+h.test('slice removeBy is a no-op when nothing matches', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local fired = 0
+
+  local world = slice('world')({
+    state = { entities = { { key = 'a', value = 1 } } },
+    watch = {
+      entities = function()
+        fired = fired + 1
+      end,
+    },
+  })
+
+  world:removeBy('entities', function()
+    return false
+  end)
+
+  h.assertEqual(0, fired)
+end)
+
 h.test('slice unmount drops a single item and triggers ref cleanup', function()
   h.reset('client')
   local slice = h.load('shared/modules/slice/index.lua')

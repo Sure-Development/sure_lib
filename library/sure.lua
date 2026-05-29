@@ -196,6 +196,9 @@ function sure.getModule(name) end
 ---@field emitServer fun(self: SureSliceInstance, eventName: string, ...: any): SureSliceInstance
 ---@field ref fun(self: SureSliceInstance, stateKey: string, handler: SureSliceRefHandler): fun()
 ---@field unmount fun(self: SureSliceInstance, stateKey: string, itemKey: string|number): SureSliceInstance
+---@field push fun(self: SureSliceInstance, stateKey: string, item: table): SureSliceInstance
+---@field patch fun(self: SureSliceInstance, stateKey: string, itemKey: string|number, partial: table): SureSliceInstance
+---@field removeBy fun(self: SureSliceInstance, stateKey: string, predicate: fun(item: table): boolean): SureSliceInstance
 ---@field transaction fun(self: SureSliceInstance, fn: fun(slice: SureSliceInstance)): SureSliceInstance
 ---@field scope fun(self: SureSliceInstance, name: string): SureSliceScope
 
