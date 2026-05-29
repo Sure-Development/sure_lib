@@ -346,6 +346,14 @@ local function buildSlice(name, spec)
         local coords = item[spawnCoordsKey]
         local options = spawnConfig.options
 
+        if type(model) ~= 'string' and type(model) ~= 'number' then
+          error(('[sure_lib][slice] interact(%s): item.%s must be a model string or hash, got %s'):format(stateKey, modelKey, type(model)), 2)
+        end
+
+        if type(coords) ~= 'vector3' and type(coords) ~= 'table' then
+          error(('[sure_lib][slice] interact(%s): item.%s must be a vector3 or table with x/y/z, got %s (value: %s)'):format(stateKey, spawnCoordsKey, type(coords), tostring(coords)), 2)
+        end
+
         if spawnConfig.type == 'ped' then
           local headingKey = spawnConfig.headingFrom or 'heading'
           local heading = item[headingKey] or 0.0
