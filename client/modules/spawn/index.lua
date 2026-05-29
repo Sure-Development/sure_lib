@@ -90,6 +90,11 @@ local function deleteHandle(handle, scopeState)
   end
 
   if DoesEntityExist(handle) then
+    if NetworkGetEntityIsNetworked(handle) then
+      NetworkRequestControlOfEntity(handle)
+      SetEntityAsMissionEntity(handle, true, true)
+    end
+
     DeleteEntity(handle)
   end
 
