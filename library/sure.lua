@@ -201,13 +201,13 @@ function sure.getModule(name) end
 
 ---@class SureSliceSpec
 ---@field state table?
----@field actions table<string, fun(slice: SureSliceInstance, ...: any): any>?
----@field on table<string, fun(slice: SureSliceInstance, ...: any): any>?
----@field net table<string, fun(slice: SureSliceInstance, ...: any): any>?
----@field watch table<string, fun(slice: SureSliceInstance, value: any, previous: any): any>?
----@field commands table<string, fun(slice: SureSliceInstance, source: integer, args: string[], rawCommand: string): any>?
----@field onLoad fun(slice: SureSliceInstance)?
----@field onUnload fun(slice: SureSliceInstance)?
+---@field actions table<string, function>?
+---@field on table<string, function>?
+---@field net table<string, function>?
+---@field watch table<string, function>?
+---@field commands table<string, function>?
+---@field onLoad function?
+---@field onUnload function?
 
 --- Create a slice. Extend `SureSliceInstance` with a typed `state` field
 --- to drive autocomplete on every handler:
