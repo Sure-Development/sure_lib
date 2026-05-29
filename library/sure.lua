@@ -211,6 +211,7 @@ function sure.getModule(name) end
 ---@class SureSliceNetSyncConfig
 ---@field direction SureSliceNetSyncDirection
 ---@field scope string?
+---@field diff boolean?
 
 ---@alias SureSliceRefCleanup fun()
 ---@alias SureSliceRefHandler fun(item: table, index: integer): SureSliceRefCleanup?

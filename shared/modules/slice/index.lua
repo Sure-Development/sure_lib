@@ -14,6 +14,23 @@ local function deepClone(value)
   return cloned
 end
 
+local function isKeyedArray(value)
+  if type(value) ~= 'table' then
+    return false
+  end
+
+  for key, item in pairs(value) do
+    if type(key) ~= 'number' then
+      return false
+    end
+    if type(item) ~= 'table' or item.key == nil then
+      return false
+    end
+  end
+
+  return true
+end
+
 local function deepEqual(a, b)
   if a == b then
     return true
@@ -83,6 +100,81 @@ local function buildState(initial, watchers, txContext)
   })
 
   return proxy, data
+end
+
+local function diffKeyedArray(previous, current)
+  local previousByKey = {}
+  if type(previous) == 'table' then
+    for _, item in ipairs(previous) do
+      previousByKey[item.key] = item
+    end
+  end
+
+  local currentByKey = {}
+  if type(current) == 'table' then
+    for _, item in ipairs(current) do
+      currentByKey[item.key] = item
+    end
+  end
+
+  local added = {}
+  local removed = {}
+  local changed = {}
+
+  for key, item in pairs(currentByKey) do
+    local before = previousByKey[key]
+    if before == nil then
+      added[#added + 1] = item
+    elseif not deepEqual(before, item) then
+      changed[#changed + 1] = item
+    end
+  end
+
+  for key in pairs(previousByKey) do
+    if currentByKey[key] == nil then
+      removed[#removed + 1] = key
+    end
+  end
+
+  if #added == 0 and #removed == 0 and #changed == 0 then
+    return nil
+  end
+
+  return { added = added, removed = removed, changed = changed }
+end
+
+local function applyKeyedPatch(current, patch)
+  local byKey = {}
+  if type(current) == 'table' then
+    for _, item in ipairs(current) do
+      byKey[item.key] = item
+    end
+  end
+
+  if type(patch.removed) == 'table' then
+    for _, key in ipairs(patch.removed) do
+      byKey[key] = nil
+    end
+  end
+
+  if type(patch.changed) == 'table' then
+    for _, item in ipairs(patch.changed) do
+      byKey[item.key] = item
+    end
+  end
+
+  if type(patch.added) == 'table' then
+    for _, item in ipairs(patch.added) do
+      byKey[item.key] = item
+    end
+  end
+
+  local out = {}
+  for _, item in pairs(byKey) do
+    out[#out + 1] = item
+  end
+
+  return out
 end
 
 local function appendWatcher(watchers, key, handler)
@@ -450,8 +542,13 @@ local function buildSlice(name, spec)
         return
       end
 
-      for eventName, stateKey in pairs(bindings) do
-        TriggerClientEvent(eventName, playerId, rawState[stateKey])
+      for eventName, info in pairs(bindings) do
+        local value = rawState[info.stateKey]
+        if info.diff then
+          TriggerClientEvent(eventName, playerId, { full = value })
+        else
+          TriggerClientEvent(eventName, playerId, value)
+        end
       end
     end
 
@@ -517,8 +614,8 @@ local function buildSlice(name, spec)
       return false
     end
 
-    function scope:_bind(eventName, stateKey)
-      bindings[eventName] = stateKey
+    function scope:_bind(eventName, stateKey, useDiff)
+      bindings[eventName] = { stateKey = stateKey, diff = useDiff == true }
     end
 
     return scope
@@ -542,12 +639,14 @@ local function buildSlice(name, spec)
     for stateKey, config in pairs(spec.netSync) do
       local direction = nil
       local scopeName = nil
+      local useDiff = false
 
       if type(config) == 'string' then
         direction = config
       elseif type(config) == 'table' then
         direction = config.direction
         scopeName = config.scope
+        useDiff = config.diff == true
       end
 
       if direction ~= 'sender' and direction ~= 'receiver' then
@@ -559,32 +658,78 @@ local function buildSlice(name, spec)
           local boundScope = nil
           if type(scopeName) == 'string' and scopeName ~= '' then
             boundScope = slice:scope(scopeName)
-            boundScope:_bind(eventName, stateKey)
+            boundScope:_bind(eventName, stateKey, useDiff)
           end
 
-          appendWatcher(watchers, stateKey, function(value)
+          local snapshot = nil
+
+          local function broadcast(payload)
             if isServer then
               if boundScope == nil then
-                TriggerClientEvent(eventName, -1, value)
+                TriggerClientEvent(eventName, -1, payload)
               else
                 for _, playerId in ipairs(boundScope:list()) do
-                  TriggerClientEvent(eventName, playerId, value)
+                  TriggerClientEvent(eventName, playerId, payload)
                 end
               end
             else
-              TriggerServerEvent(eventName, value)
+              TriggerServerEvent(eventName, payload)
             end
+          end
+
+          appendWatcher(watchers, stateKey, function(value)
+            if not useDiff then
+              broadcast(value)
+              return
+            end
+
+            if not isKeyedArray(value) then
+              if isKeyedArray(snapshot) then
+                slice.log.warn(('netSync.%s: value is no longer a keyed array; falling back to full sync'):format(stateKey))
+              end
+              snapshot = nil
+              broadcast({ full = value })
+              return
+            end
+
+            if snapshot == nil then
+              snapshot = deepClone(value)
+              broadcast({ full = value })
+              return
+            end
+
+            local patch = diffKeyedArray(snapshot, value)
+            if patch == nil then
+              return
+            end
+
+            snapshot = deepClone(value)
+            broadcast({ patch = patch })
           end)
         elseif direction == 'receiver' then
-          if isServer then
-            RegisterNetEvent(eventName, function(value)
-              state[stateKey] = value
-            end)
-          else
-            RegisterNetEvent(eventName, function(value)
-              state[stateKey] = value
-            end)
-          end
+          RegisterNetEvent(eventName, function(payload)
+            if not useDiff then
+              state[stateKey] = payload
+              return
+            end
+
+            if type(payload) ~= 'table' then
+              state[stateKey] = payload
+              return
+            end
+
+            if payload.full ~= nil then
+              state[stateKey] = payload.full
+              return
+            end
+
+            if payload.patch ~= nil then
+              state[stateKey] = applyKeyedPatch(rawState[stateKey], payload.patch)
+              return
+            end
+
+            state[stateKey] = payload
+          end)
         end
       end
     end

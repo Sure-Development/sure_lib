@@ -642,6 +642,144 @@ h.test('slice netSync sender with scope emits only to scope members', function()
   h.assertEqual(6, context.clientEvents[2].target)
 end)
 
+h.test('slice netSync sender with diff sends full value on first emit then patches', function()
+  local context = h.reset('server')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = { entities = {} },
+    netSync = {
+      entities = { direction = 'sender', diff = true },
+    },
+  })
+
+  world.state.entities = {
+    { key = 'a', value = 1 },
+    { key = 'b', value = 2 },
+  }
+
+  h.assertEqual(1, #context.clientEvents)
+  local first = context.clientEvents[1].args[1]
+  h.assertTrue(first.full ~= nil)
+  h.assertEqual(2, #first.full)
+
+  context.clientEvents = {}
+
+  world.state.entities = {
+    { key = 'a', value = 1 },
+    { key = 'b', value = 2 },
+    { key = 'c', value = 3 },
+  }
+
+  h.assertEqual(1, #context.clientEvents)
+  local patch = context.clientEvents[1].args[1].patch
+  h.assertTrue(patch ~= nil)
+  h.assertEqual(1, #patch.added)
+  h.assertEqual('c', patch.added[1].key)
+  h.assertEqual(0, #patch.removed)
+  h.assertEqual(0, #patch.changed)
+end)
+
+h.test('slice netSync diff skips emit when patch is empty', function()
+  local context = h.reset('server')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = { entities = {} },
+    netSync = {
+      entities = { direction = 'sender', diff = true },
+    },
+  })
+
+  world.state.entities = { { key = 'a', value = 1 } }
+  context.clientEvents = {}
+
+  world.state.entities = { { key = 'a', value = 1 } }
+
+  h.assertEqual(0, #context.clientEvents)
+end)
+
+h.test('slice netSync diff emits patch with removed and changed', function()
+  local context = h.reset('server')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = { entities = {} },
+    netSync = {
+      entities = { direction = 'sender', diff = true },
+    },
+  })
+
+  world.state.entities = {
+    { key = 'a', value = 1 },
+    { key = 'b', value = 2 },
+    { key = 'c', value = 3 },
+  }
+  context.clientEvents = {}
+
+  world.state.entities = {
+    { key = 'a', value = 1 },
+    { key = 'b', value = 99 },
+  }
+
+  local patch = context.clientEvents[1].args[1].patch
+  h.assertEqual(0, #patch.added)
+  h.assertEqual(1, #patch.removed)
+  h.assertEqual('c', patch.removed[1])
+  h.assertEqual(1, #patch.changed)
+  h.assertEqual('b', patch.changed[1].key)
+  h.assertEqual(99, patch.changed[1].value)
+end)
+
+h.test('slice netSync diff scope sends full value to newly added players', function()
+  local context = h.reset('server')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = { entities = {} },
+    netSync = {
+      entities = { direction = 'sender', diff = true, scope = 'farmers' },
+    },
+  })
+
+  world.state.entities = { { key = 'a', value = 1 } }
+  context.clientEvents = {}
+
+  world:scope('farmers'):add(5)
+
+  h.assertEqual(1, #context.clientEvents)
+  h.assertEqual(5, context.clientEvents[1].target)
+  local payload = context.clientEvents[1].args[1]
+  h.assertTrue(payload.full ~= nil)
+  h.assertEqual(1, #payload.full)
+  h.assertEqual('a', payload.full[1].key)
+end)
+
+h.test('slice netSync diff receiver applies patches onto state', function()
+  local context = h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = { entities = {} },
+    netSync = {
+      entities = { direction = 'receiver', diff = true },
+    },
+  })
+
+  local handler = context.events['world:sync:entities']
+  handler({ full = { { key = 'a', value = 1 }, { key = 'b', value = 2 } } })
+  h.assertEqual(2, #world.state.entities)
+
+  handler({ patch = { added = { { key = 'c', value = 3 } }, removed = { 'a' }, changed = {} } })
+
+  table.sort(world.state.entities, function(a, b)
+    return a.key < b.key
+  end)
+  h.assertEqual(2, #world.state.entities)
+  h.assertEqual('b', world.state.entities[1].key)
+  h.assertEqual('c', world.state.entities[2].key)
+end)
+
 h.test('slice netSync receiver mirrors incoming net events into state', function()
   local context = h.reset('client')
   local slice = h.load('shared/modules/slice/index.lua')

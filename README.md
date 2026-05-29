@@ -103,7 +103,7 @@ return slice 'duty' {
 - `every` spawns a single scheduling thread per slice that fires each interval handler when its window elapses, sleeping only until the next due interval.
 - Auto-generates a `setX` action for every state key. Custom actions with the same name take precedence.
 - `slice:transaction(fn)` batches mutations so each watcher fires once with the net change.
-- `netSync = { stateKey = 'sender' | 'receiver' | { direction, scope } }` mirrors state across server/client. Scopes are managed through `slice:scope(name)` with `add` / `remove` / `list` / `contains` accepting both player ids and ESX identifiers.
+- `netSync = { stateKey = 'sender' | 'receiver' | { direction, scope, diff } }` mirrors state across server/client. Scopes are managed through `slice:scope(name)` with `add` / `remove` / `list` / `contains` accepting both player ids and ESX identifiers. Setting `diff = true` switches the wire format to a keyed-array patch (`{ added, removed, changed }`) and skips emits that produce an empty patch.
 
 ### Keyed reactive list with `slice:ref`
 
