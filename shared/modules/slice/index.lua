@@ -552,6 +552,18 @@ local function buildSlice(name, spec)
       end
     end
 
+    local function emitClearedTo(playerId)
+      if playerId == nil or not isServer then
+        return
+      end
+
+      for eventName, info in pairs(bindings) do
+        if info.diff then
+          TriggerClientEvent(eventName, playerId, { cleared = true })
+        end
+      end
+    end
+
     function scope:add(idOrIdentifier)
       if type(idOrIdentifier) == 'number' then
         if not playerIds[idOrIdentifier] then
@@ -569,10 +581,22 @@ local function buildSlice(name, spec)
     end
 
     function scope:remove(idOrIdentifier)
+      local resolved = nil
+
       if type(idOrIdentifier) == 'number' then
-        playerIds[idOrIdentifier] = nil
+        if playerIds[idOrIdentifier] then
+          playerIds[idOrIdentifier] = nil
+          resolved = idOrIdentifier
+        end
       elseif type(idOrIdentifier) == 'string' then
-        identifiers[idOrIdentifier] = nil
+        if identifiers[idOrIdentifier] then
+          identifiers[idOrIdentifier] = nil
+          resolved = resolveIdentifier(idOrIdentifier)
+        end
+      end
+
+      if resolved ~= nil then
+        emitClearedTo(resolved)
       end
 
       return self
@@ -715,6 +739,11 @@ local function buildSlice(name, spec)
 
             if type(payload) ~= 'table' then
               state[stateKey] = payload
+              return
+            end
+
+            if payload.cleared == true then
+              state[stateKey] = nil
               return
             end
 

@@ -755,6 +755,79 @@ h.test('slice netSync diff scope sends full value to newly added players', funct
   h.assertEqual('a', payload.full[1].key)
 end)
 
+h.test('slice scope remove emits cleared envelope to the player for diff fields', function()
+  local context = h.reset('server')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = { entities = {} },
+    netSync = {
+      entities = { direction = 'sender', diff = true, scope = 'farmers' },
+    },
+  })
+
+  world.state.entities = { { key = 'a', value = 1 } }
+  world:scope('farmers'):add(5)
+  context.clientEvents = {}
+
+  world:scope('farmers'):remove(5)
+
+  h.assertEqual(1, #context.clientEvents)
+  h.assertEqual(5, context.clientEvents[1].target)
+  h.assertTrue(context.clientEvents[1].args[1].cleared == true)
+end)
+
+h.test('slice scope remove does not emit cleared for non-diff fields', function()
+  local context = h.reset('server')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = { entities = {} },
+    netSync = {
+      entities = { direction = 'sender', scope = 'farmers' },
+    },
+  })
+
+  world:scope('farmers'):add(5)
+  context.clientEvents = {}
+
+  world:scope('farmers'):remove(5)
+
+  h.assertEqual(0, #context.clientEvents)
+end)
+
+h.test('slice netSync diff receiver clears state on cleared envelope and ref cleans up items', function()
+  local context = h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local cleaned = {}
+
+  local world = slice('world')({
+    state = { entities = {} },
+    netSync = {
+      entities = { direction = 'receiver', diff = true },
+    },
+  })
+
+  world:ref('entities', function(item)
+    return function()
+      cleaned[#cleaned + 1] = item.key
+    end
+  end)
+
+  local handler = context.events['world:sync:entities']
+  handler({ full = { { key = 'a', value = 1 }, { key = 'b', value = 2 } } })
+  h.assertEqual(2, #world.state.entities)
+  h.assertEqual(0, #cleaned)
+
+  handler({ cleared = true })
+
+  table.sort(cleaned)
+  h.assertEqual(2, #cleaned)
+  h.assertEqual('a', cleaned[1])
+  h.assertEqual('b', cleaned[2])
+  h.assertEqual(nil, world.state.entities)
+end)
+
 h.test('slice netSync diff receiver applies patches onto state', function()
   local context = h.reset('client')
   local slice = h.load('shared/modules/slice/index.lua')
