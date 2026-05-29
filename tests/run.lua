@@ -4,6 +4,7 @@ local testFiles = {
   'tests.features.module_loader_test',
   'tests.features.validator_test',
   'tests.features.hook_test',
+  'tests.features.slice_test',
   'tests.features.track_test',
   'tests.features.player_test',
   'tests.features.config_test',

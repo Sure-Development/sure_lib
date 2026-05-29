@@ -32,7 +32,7 @@ shared_script '@sure_lib/init.lua'
 
 Modules are loaded through `sure.getModule(moduleName)`.
 
-Available modules: `esx`, `player`, `cooldown`, `validator`, `track`, `hook`, `log`, `config`, `spawn`, `keybind`, `db`, `lui`.
+Available modules: `esx`, `player`, `cooldown`, `validator`, `track`, `hook`, `log`, `slice`, `config`, `spawn`, `keybind`, `db`, `lui`.
 
 > `listener` was renamed to `hook` and now supports a `use(middleware)` pipeline and explicit `dispatch` / `dispatchClient` / `dispatchServer` verbs.
 
@@ -49,6 +49,57 @@ end)
 ```
 
 The target resource must be started before `injectResource` runs.
+
+## Slice — declarative feature bundle
+
+`slice` packages state, actions, event handlers, and lifecycle hooks for a feature in one declarative spec. Every name is auto-prefixed with the slice name so events, commands, and logs stay consistent across resources.
+
+```lua
+local slice = sure.getModule('slice')
+
+return slice 'duty' {
+  state = {
+    onDuty = false,
+    streak = 0,
+  },
+
+  actions = {
+    toggle = function(s)
+      s.state.onDuty = not s.state.onDuty
+    end,
+  },
+
+  net = {
+    sync = function(s, value)
+      s.state.onDuty = value
+    end,
+  },
+
+  watch = {
+    onDuty = function(s, value)
+      s.log.info('changed to ' .. tostring(value))
+      s:emit('changed', value)
+    end,
+  },
+
+  commands = {
+    print = function(s)
+      print(json.encode(s:snapshot()))
+    end,
+  },
+
+  onLoad = function(s)
+    s.log.info('ready')
+  end,
+}
+```
+
+- `state` becomes a reactive proxy; writing triggers `watch` and `subscribe` handlers.
+- `actions` are pure mutators exposed as `slice.actions.<name>(...)`.
+- `on` / `net` register listeners against `'<sliceName>:<eventName>'`.
+- `emit` / `emitClient` / `emitServer` auto-prefix the same way.
+- `commands` registers `<sliceName>:<commandName>` console commands.
+- `onLoad` / `onUnload` only fire for the current resource.
 
 For Lua UI, point your resource NUI page at the bundled renderer:
 

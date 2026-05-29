@@ -25,6 +25,7 @@
 ---| 'lui'
 ---| 'log'
 ---| 'keybind'
+---| 'slice'
 
 ---@class SureLib
 ---@field player SurePlayer client-side: auto-loaded after init
@@ -182,6 +183,29 @@ function sure.getModule(name) end
 ---@field update fun(self: SureDbModel, query: SureDbQueryOptions): integer?
 ---@field delete fun(self: SureDbModel, query: SureDbQueryOptions): integer?
 ---@field raw fun(self: SureDbModel, sql: string, params: any[]?): any
+
+---@class SureSliceInstance
+---@field name string
+---@field state table<string, any>
+---@field actions table<string, fun(...): any>
+---@field log SureLogger
+---@field subscribe fun(self: SureSliceInstance, key: string, handler: fun(value: any, previous: any)): SureSliceInstance
+---@field snapshot fun(self: SureSliceInstance): table
+---@field emit fun(self: SureSliceInstance, eventName: string, ...: any): SureSliceInstance
+---@field emitClient fun(self: SureSliceInstance, target: integer|string, eventName: string, ...: any): SureSliceInstance
+---@field emitServer fun(self: SureSliceInstance, eventName: string, ...: any): SureSliceInstance
+
+---@class SureSliceSpec
+---@field state table<string, any>?
+---@field actions table<string, fun(slice: SureSliceInstance, ...: any): any>?
+---@field on table<string, fun(slice: SureSliceInstance, ...: any): any>?
+---@field net table<string, fun(slice: SureSliceInstance, ...: any): any>?
+---@field watch table<string, fun(slice: SureSliceInstance, value: any, previous: any): any>?
+---@field commands table<string, fun(slice: SureSliceInstance, source: integer, args: string[], rawCommand: string): any>?
+---@field onLoad fun(slice: SureSliceInstance)?
+---@field onUnload fun(slice: SureSliceInstance)?
+
+---@alias SureSlice fun(name: string): fun(spec: SureSliceSpec): SureSliceInstance
 
 ---@class SureDb
 ---@field schema fun(self: SureDb, name: string, definition: table): SureDbModel
