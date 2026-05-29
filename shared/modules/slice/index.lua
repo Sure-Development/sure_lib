@@ -156,6 +156,37 @@ local function buildSlice(name, spec)
     return copy
   end
 
+  function slice:unmount(stateKey, itemKey)
+    if type(stateKey) ~= 'string' or stateKey == '' then
+      error('[sure_lib][slice] unmount: stateKey must be a non-empty string', 2)
+    end
+
+    if itemKey == nil then
+      error('[sure_lib][slice] unmount: itemKey is required', 2)
+    end
+
+    local list = rawState[stateKey]
+    if type(list) ~= 'table' then
+      return self
+    end
+
+    local filtered = {}
+    local removed = false
+    for _, item in ipairs(list) do
+      if type(item) == 'table' and item.key == itemKey then
+        removed = true
+      else
+        filtered[#filtered + 1] = item
+      end
+    end
+
+    if removed then
+      state[stateKey] = filtered
+    end
+
+    return self
+  end
+
   function slice:ref(stateKey, handler)
     if type(stateKey) ~= 'string' or stateKey == '' then
       error('[sure_lib][slice] ref: stateKey must be a non-empty string', 2)

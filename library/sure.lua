@@ -195,6 +195,7 @@ function sure.getModule(name) end
 ---@field emitClient fun(self: SureSliceInstance, target: integer|string, eventName: string, ...: any): SureSliceInstance
 ---@field emitServer fun(self: SureSliceInstance, eventName: string, ...: any): SureSliceInstance
 ---@field ref fun(self: SureSliceInstance, stateKey: string, handler: SureSliceRefHandler): fun()
+---@field unmount fun(self: SureSliceInstance, stateKey: string, itemKey: string|number): SureSliceInstance
 
 ---@alias SureSliceRefCleanup fun()
 ---@alias SureSliceRefHandler fun(item: table, index: integer): SureSliceRefCleanup?

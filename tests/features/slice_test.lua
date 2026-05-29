@@ -385,6 +385,59 @@ h.test('slice ref handler without a returned cleanup runs no cleanup on remove',
   h.assertFalse(cleaned)
 end)
 
+h.test('slice unmount drops a single item and triggers ref cleanup', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local cleaned = {}
+
+  local world = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', value = 1 },
+        { key = 'b', value = 2 },
+      },
+    },
+  })
+
+  world:ref('entities', function(item)
+    return function()
+      cleaned[#cleaned + 1] = item.key
+    end
+  end)
+
+  world:unmount('entities', 'a')
+
+  h.assertEqual(1, #cleaned)
+  h.assertEqual('a', cleaned[1])
+  h.assertEqual(1, #world.state.entities)
+  h.assertEqual('b', world.state.entities[1].key)
+end)
+
+h.test('slice unmount is a no-op when the item key is missing', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local cleaned = {}
+
+  local world = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', value = 1 },
+      },
+    },
+  })
+
+  world:ref('entities', function(item)
+    return function()
+      cleaned[#cleaned + 1] = item.key
+    end
+  end)
+
+  world:unmount('entities', 'ghost')
+
+  h.assertEqual(0, #cleaned)
+  h.assertEqual(1, #world.state.entities)
+end)
+
 h.test('slice ref dispose unmounts all current items and stops watching', function()
   h.reset('client')
   local slice = h.load('shared/modules/slice/index.lua')
