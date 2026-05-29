@@ -102,6 +102,17 @@ local function buildSlice(name, spec)
 
   local watchers = {}
   local state, rawState = buildState(spec.state, watchers)
+  local emitNameCache = {}
+
+  local function resolveEventName(eventName)
+    local cached = emitNameCache[eventName]
+    if cached == nil then
+      cached = name .. ':' .. eventName
+      emitNameCache[eventName] = cached
+    end
+
+    return cached
+  end
 
   local slice = {
     name = name,
@@ -115,26 +126,23 @@ local function buildSlice(name, spec)
       error('[sure_lib][slice] subscribe requires (key, handler)', 2)
     end
 
-    appendWatcher(watchers, key, function(value, previous)
-      handler(value, previous)
-    end)
-
+    appendWatcher(watchers, key, handler)
     return self
   end
 
   function slice:emit(eventName, ...)
-    hook:dispatch(prefix(name, eventName), ...)
+    hook:dispatch(resolveEventName(eventName), ...)
     return self
   end
 
   if IsDuplicityVersion() then
     function slice:emitClient(target, eventName, ...)
-      hook:dispatchClient(target, prefix(name, eventName), ...)
+      hook:dispatchClient(target, resolveEventName(eventName), ...)
       return self
     end
   else
     function slice:emitServer(eventName, ...)
-      hook:dispatchServer(prefix(name, eventName), ...)
+      hook:dispatchServer(resolveEventName(eventName), ...)
       return self
     end
   end
@@ -192,13 +200,18 @@ local function buildSlice(name, spec)
         return
       end
 
-      list = list or {}
+      if list == nil then
+        for itemKey in pairs(snapshots) do
+          unmount(itemKey)
+        end
+        return
+      end
+
       if type(list) ~= 'table' then
         error(('[sure_lib][slice] ref: state.%s must be a table or nil'):format(stateKey), 2)
       end
 
-      local nextByKey = {}
-      local order = {}
+      local seen = {}
 
       for index, item in ipairs(list) do
         if type(item) ~= 'table' then
@@ -210,29 +223,27 @@ local function buildSlice(name, spec)
           error(('[sure_lib][slice] ref(%s): item #%d missing required field "key"'):format(stateKey, index), 2)
         end
 
-        if nextByKey[itemKey] ~= nil then
+        if seen[itemKey] then
           error(('[sure_lib][slice] ref(%s): duplicate key %s'):format(stateKey, tostring(itemKey)), 2)
         end
 
-        nextByKey[itemKey] = { item = item, index = index }
-        order[#order + 1] = itemKey
+        seen[itemKey] = true
       end
 
       for itemKey in pairs(snapshots) do
-        if nextByKey[itemKey] == nil then
+        if seen[itemKey] == nil then
           unmount(itemKey)
         end
       end
 
-      for _, itemKey in ipairs(order) do
-        local entry = nextByKey[itemKey]
-        local previousSnapshot = snapshots[itemKey]
+      for index, item in ipairs(list) do
+        local previousSnapshot = snapshots[item.key]
 
         if previousSnapshot == nil then
-          mount(entry.item, entry.index)
-        elseif not deepEqual(previousSnapshot, entry.item) then
-          unmount(itemKey)
-          mount(entry.item, entry.index)
+          mount(item, index)
+        elseif not deepEqual(previousSnapshot, item) then
+          unmount(item.key)
+          mount(item, index)
         end
       end
     end
