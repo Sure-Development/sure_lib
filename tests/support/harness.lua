@@ -690,6 +690,11 @@ function harness.reset(side, options)
     context.entityOptions[handle].diesOnInjury = value
   end
 
+  _G.PlaceObjectOnGroundProperly = function(handle)
+    context.entityOptions[handle] = context.entityOptions[handle] or {}
+    context.entityOptions[handle].placedOnGround = true
+  end
+
   _G.RequestAnimDict = function(dict)
     context.requestedAnimDicts[#context.requestedAnimDicts + 1] = dict
   end

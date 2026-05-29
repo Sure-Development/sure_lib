@@ -155,8 +155,14 @@ local function spawnEntityInternal(kind, model, coords, heading, opts, scopeStat
 
   if kind == 'ped' then
     applyPedOpts(handle, opts)
-  elseif opts.rotation ~= nil then
-    SetEntityRotation(handle, opts.rotation.x, opts.rotation.y, opts.rotation.z, 2, true)
+  else
+    if opts.rotation ~= nil then
+      SetEntityRotation(handle, opts.rotation.x, opts.rotation.y, opts.rotation.z, 2, true)
+    end
+
+    if opts.placeOnGround == true then
+      PlaceObjectOnGroundProperly(handle)
+    end
   end
 
   SetModelAsNoLongerNeeded(modelHash)
