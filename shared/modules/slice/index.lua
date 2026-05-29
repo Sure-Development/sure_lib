@@ -319,6 +319,15 @@ local function buildSlice(name, spec)
     local onEnter = interactSpec.onEnter
     local onExit = interactSpec.onExit
     local nearby = interactSpec.nearby
+    local action = interactSpec.action
+
+    if action ~= nil and type(action) ~= 'function' then
+      error('[sure_lib][slice] interact: action must be a function', 2)
+    end
+
+    if action ~= nil and nearby == nil then
+      error('[sure_lib][slice] interact: action requires nearby as the trigger predicate', 2)
+    end
 
     local hasPoint = onEnter ~= nil or onExit ~= nil or nearby ~= nil or interactSpec.distanceFrom ~= nil
 
@@ -369,7 +378,10 @@ local function buildSlice(name, spec)
 
         if nearby ~= nil then
           function point:nearby()
-            nearby(slice, item, ctx)
+            local triggered = nearby(slice, item, ctx)
+            if triggered == true and action ~= nil then
+              action(slice, item, ctx)
+            end
           end
         end
       end

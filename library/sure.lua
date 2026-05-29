@@ -220,7 +220,8 @@ function sure.getModule(name) end
 ---@field distanceFrom? string
 ---@field onEnter? fun(slice: SureSliceInstance, item: table, ctx: SureSliceInteractContext)
 ---@field onExit? fun(slice: SureSliceInstance, item: table, ctx: SureSliceInteractContext)
----@field nearby? fun(slice: SureSliceInstance, item: table, ctx: SureSliceInteractContext): boolean?
+---@field nearby? fun(slice: SureSliceInstance, item: table, ctx: SureSliceInteractContext): boolean
+---@field action? fun(slice: SureSliceInstance, item: table, ctx: SureSliceInteractContext)
 
 ---@class SureSliceScope
 ---@field name string

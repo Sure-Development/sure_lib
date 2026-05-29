@@ -536,6 +536,89 @@ h.test('slice interact supports ped spawn with heading', function()
   h.assertEqual(90.0, context.spawnedPeds[1].heading)
 end)
 
+h.test('slice interact action fires when nearby predicate returns true', function()
+  local context = h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local actionRuns = 0
+  local ready = false
+
+  local world = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', model = 'prop_rock_3_g', coords = { x = 0, y = 0, z = 0 }, range = 1.0 },
+      },
+    },
+  })
+
+  world:interact('entities', {
+    nearby = function()
+      return ready
+    end,
+    action = function()
+      actionRuns = actionRuns + 1
+    end,
+  })
+
+  local point = context.points[1]
+  point:nearby()
+  h.assertEqual(0, actionRuns)
+
+  ready = true
+  point:nearby()
+  h.assertEqual(1, actionRuns)
+
+  ready = false
+  point:nearby()
+  h.assertEqual(1, actionRuns)
+
+  ready = true
+  point:nearby()
+  h.assertEqual(2, actionRuns)
+end)
+
+h.test('slice interact action receives slice, item, and ctx', function()
+  local context = h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local seen = nil
+
+  local world = slice('world')({
+    state = {
+      entities = {
+        { key = 'rock-1', model = 'prop_rock_3_g', coords = { x = 0, y = 0, z = 0 }, range = 1.0 },
+      },
+    },
+  })
+
+  world:interact('entities', {
+    spawn = { type = 'object' },
+    nearby = function()
+      return true
+    end,
+    action = function(s, item, ctx)
+      seen = { sliceName = s.name, itemKey = item.key, entity = ctx.entity }
+    end,
+  })
+
+  context.points[1]:nearby()
+  h.assertEqual('world', seen.sliceName)
+  h.assertEqual('rock-1', seen.itemKey)
+  h.assertEqual(context.spawnedObjects[1].handle, seen.entity)
+end)
+
+h.test('slice interact action requires nearby as the trigger predicate', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({ state = { entities = {} } })
+
+  h.assertErrorContains(function()
+    world:interact('entities', {
+      spawn = { type = 'object' },
+      action = function() end,
+    })
+  end, 'action requires nearby')
+end)
+
 h.test('slice interact errors when neither spawn nor handlers are provided', function()
   h.reset('client')
   local slice = h.load('shared/modules/slice/index.lua')
