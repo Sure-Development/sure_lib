@@ -224,10 +224,11 @@ function sure.getModule(name) end
 ---       },
 ---     }
 ---
----@alias SureSlice fun(name: string): SureSliceBuilder
+---@class SureSlice
+---@overload fun(name: string): SureSliceBuilder
 
----@generic T
----@alias SureSliceBuilder fun(spec: SureSliceSpec<T>): SureSliceInstance<T>
+---@class SureSliceBuilder
+---@overload fun<T>(spec: SureSliceSpec<T>): SureSliceInstance<T>
 
 ---@class SureDb
 ---@field schema fun(self: SureDb, name: string, definition: table): SureDbModel
