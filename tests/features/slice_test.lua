@@ -445,6 +445,119 @@ h.test('slice ref auto-dispose runs after spec.onUnload', function()
   h.assertEqual('refDispose', order[2])
 end)
 
+h.test('slice interact spawns object and creates point with handlers per item', function()
+  local context = h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local entered = {}
+  local nearbyCalls = {}
+
+  local world = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', model = 'prop_rock_3_g', coords = { x = 1, y = 2, z = 3 }, range = 2.5 },
+      },
+    },
+  })
+
+  world:interact('entities', {
+    spawn = { type = 'object', options = { freeze = true } },
+    distanceFrom = 'range',
+    onEnter = function(_, item, ctx)
+      entered[#entered + 1] = { key = item.key, entity = ctx.entity }
+    end,
+    nearby = function(_, item)
+      nearbyCalls[#nearbyCalls + 1] = item.key
+    end,
+  })
+
+  h.assertEqual(1, #context.spawnedObjects)
+  h.assertEqual(1, #context.points)
+  h.assertEqual(2.5, context.points[1].distance)
+
+  context.points[1]:onEnter()
+  h.assertEqual('a', entered[1].key)
+  h.assertEqual(context.spawnedObjects[1].handle, entered[1].entity)
+
+  context.points[1]:nearby()
+  context.points[1]:nearby()
+  h.assertEqual(2, #nearbyCalls)
+end)
+
+h.test('slice interact cleanup deletes spawned entity and removes point on unmount', function()
+  local context = h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', model = 'prop_rock_3_g', coords = { x = 1, y = 2, z = 3 }, range = 1.0 },
+      },
+    },
+  })
+
+  world:interact('entities', {
+    spawn = { type = 'object' },
+    nearby = function() end,
+  })
+
+  local spawnedHandle = context.spawnedObjects[1].handle
+  local point = context.points[1]
+
+  world:unmount('entities', 'a')
+
+  h.assertTrue(point.removed)
+  local deleted = false
+  for _, handle in ipairs(context.deletedEntities) do
+    if handle == spawnedHandle then
+      deleted = true
+    end
+  end
+  h.assertTrue(deleted)
+end)
+
+h.test('slice interact supports ped spawn with heading', function()
+  local context = h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = {
+      entities = {
+        { key = 'g1', model = 'a_m_m_business_01', coords = { x = 0, y = 0, z = 0 }, heading = 90.0 },
+      },
+    },
+  })
+
+  world:interact('entities', {
+    spawn = { type = 'ped', options = { freeze = true } },
+    onEnter = function() end,
+  })
+
+  h.assertEqual(1, #context.spawnedPeds)
+  h.assertEqual(90.0, context.spawnedPeds[1].heading)
+end)
+
+h.test('slice interact errors when neither spawn nor handlers are provided', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({ state = { entities = {} } })
+
+  h.assertErrorContains(function()
+    world:interact('entities', {})
+  end, 'spawn or at least one of onEnter')
+end)
+
+h.test('slice interact is client-only', function()
+  h.reset('server')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({ state = { entities = {} } })
+
+  h.assertErrorContains(function()
+    world:interact('entities', { onEnter = function() end })
+  end, 'client-only')
+end)
+
 h.test('slice push appends an item and triggers watchers', function()
   h.reset('client')
   local slice = h.load('shared/modules/slice/index.lua')

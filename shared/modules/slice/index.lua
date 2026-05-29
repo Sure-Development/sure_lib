@@ -300,6 +300,96 @@ local function buildSlice(name, spec)
     return copy
   end
 
+  function slice:interact(stateKey, interactSpec)
+    if isServer then
+      error('[sure_lib][slice] interact is client-only', 2)
+    end
+
+    if type(stateKey) ~= 'string' or stateKey == '' then
+      error('[sure_lib][slice] interact: stateKey must be a non-empty string', 2)
+    end
+
+    if type(interactSpec) ~= 'table' then
+      error('[sure_lib][slice] interact: spec must be a table', 2)
+    end
+
+    local spawnConfig = interactSpec.spawn
+    local distanceFrom = interactSpec.distanceFrom or 'range'
+    local coordsFrom = interactSpec.coordsFrom or (spawnConfig and spawnConfig.coordsFrom) or 'coords'
+    local onEnter = interactSpec.onEnter
+    local onExit = interactSpec.onExit
+    local nearby = interactSpec.nearby
+
+    local hasPoint = onEnter ~= nil or onExit ~= nil or nearby ~= nil or interactSpec.distanceFrom ~= nil
+
+    if spawnConfig == nil and not hasPoint then
+      error('[sure_lib][slice] interact: spec must define spawn or at least one of onEnter/onExit/nearby', 2)
+    end
+
+    return self:ref(stateKey, function(item)
+      local ctx = { entity = nil, point = nil }
+
+      if type(spawnConfig) == 'table' then
+        local spawnModule = require('@sure_lib.client.modules.spawn.index')
+        local modelKey = spawnConfig.modelFrom or 'model'
+        local spawnCoordsKey = spawnConfig.coordsFrom or coordsFrom
+        local model = item[modelKey]
+        local coords = item[spawnCoordsKey]
+        local options = spawnConfig.options
+
+        if spawnConfig.type == 'ped' then
+          local headingKey = spawnConfig.headingFrom or 'heading'
+          local heading = item[headingKey] or 0.0
+          ctx.entity = spawnModule:ped(model, coords, heading, options)
+        elseif spawnConfig.type == 'object' then
+          ctx.entity = spawnModule:object(model, coords, options)
+        else
+          slice.log.warn(('interact(%s): unsupported spawn.type %s'):format(stateKey, tostring(spawnConfig.type)))
+        end
+      end
+
+      if hasPoint then
+        local distance = item[distanceFrom] or 2.0
+        local coords = item[coordsFrom]
+
+        local point = lib.points.new({ coords = coords, distance = distance })
+        ctx.point = point
+
+        if onEnter ~= nil then
+          function point:onEnter()
+            onEnter(slice, item, ctx)
+          end
+        end
+
+        if onExit ~= nil then
+          function point:onExit()
+            onExit(slice, item, ctx)
+          end
+        end
+
+        if nearby ~= nil then
+          function point:nearby()
+            nearby(slice, item, ctx)
+          end
+        end
+      end
+
+      return function()
+        if ctx.point ~= nil and type(ctx.point.remove) == 'function' then
+          ctx.point:remove()
+        end
+
+        if ctx.entity ~= nil and DoesEntityExist(ctx.entity) then
+          if NetworkGetEntityIsNetworked(ctx.entity) then
+            NetworkRequestControlOfEntity(ctx.entity)
+            SetEntityAsMissionEntity(ctx.entity, true, true)
+          end
+          DeleteEntity(ctx.entity)
+        end
+      end
+    end)
+  end
+
   function slice:push(stateKey, item)
     if type(stateKey) ~= 'string' or stateKey == '' then
       error('[sure_lib][slice] push: stateKey must be a non-empty string', 2)

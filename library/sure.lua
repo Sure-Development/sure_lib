@@ -199,6 +199,26 @@ function sure.getModule(name) end
 ---@field push fun(self: SureSliceInstance, stateKey: string, item: table): SureSliceInstance
 ---@field patch fun(self: SureSliceInstance, stateKey: string, itemKey: string|number, partial: table): SureSliceInstance
 ---@field removeBy fun(self: SureSliceInstance, stateKey: string, predicate: fun(item: table): boolean): SureSliceInstance
+---@field interact fun(self: SureSliceInstance, stateKey: string, spec: SureSliceInteractSpec): fun()
+
+---@class SureSliceInteractContext
+---@field entity integer?
+---@field point any?
+
+---@class SureSliceInteractSpawn
+---@field type 'ped'|'object'
+---@field modelFrom string?
+---@field coordsFrom string?
+---@field headingFrom string?
+---@field options table?
+
+---@class SureSliceInteractSpec
+---@field spawn SureSliceInteractSpawn?
+---@field coordsFrom string?
+---@field distanceFrom string?
+---@field onEnter fun(slice: SureSliceInstance, item: table, ctx: SureSliceInteractContext)?
+---@field onExit fun(slice: SureSliceInstance, item: table, ctx: SureSliceInteractContext)?
+---@field nearby fun(slice: SureSliceInstance, item: table, ctx: SureSliceInteractContext): boolean?
 ---@field transaction fun(self: SureSliceInstance, fn: fun(slice: SureSliceInstance)): SureSliceInstance
 ---@field scope fun(self: SureSliceInstance, name: string): SureSliceScope
 
