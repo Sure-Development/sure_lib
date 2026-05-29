@@ -184,32 +184,50 @@ function sure.getModule(name) end
 ---@field delete fun(self: SureDbModel, query: SureDbQueryOptions): integer?
 ---@field raw fun(self: SureDbModel, sql: string, params: any[]?): any
 
----@class SureSliceInstance
+---@class SureSliceInstance<T>: { state: T }
 ---@field name string
----@field state table<string, any>
 ---@field actions table<string, fun(...): any>
 ---@field log SureLogger
----@field subscribe fun(self: SureSliceInstance, key: string, handler: fun(value: any, previous: any)): SureSliceInstance
----@field snapshot fun(self: SureSliceInstance): table
----@field emit fun(self: SureSliceInstance, eventName: string, ...: any): SureSliceInstance
----@field emitClient fun(self: SureSliceInstance, target: integer|string, eventName: string, ...: any): SureSliceInstance
----@field emitServer fun(self: SureSliceInstance, eventName: string, ...: any): SureSliceInstance
----@field ref fun(self: SureSliceInstance, stateKey: string, handler: SureSliceRefHandler): fun()
+---@field subscribe fun(self: SureSliceInstance<T>, key: string, handler: fun(value: any, previous: any)): SureSliceInstance<T>
+---@field snapshot fun(self: SureSliceInstance<T>): T
+---@field emit fun(self: SureSliceInstance<T>, eventName: string, ...: any): SureSliceInstance<T>
+---@field emitClient fun(self: SureSliceInstance<T>, target: integer|string, eventName: string, ...: any): SureSliceInstance<T>
+---@field emitServer fun(self: SureSliceInstance<T>, eventName: string, ...: any): SureSliceInstance<T>
+---@field ref fun(self: SureSliceInstance<T>, stateKey: string, handler: SureSliceRefHandler): fun()
 
 ---@alias SureSliceRefCleanup fun()
 ---@alias SureSliceRefHandler fun(item: table, index: integer): SureSliceRefCleanup?
 
----@class SureSliceSpec
----@field state table<string, any>?
----@field actions table<string, fun(slice: SureSliceInstance, ...: any): any>?
----@field on table<string, fun(slice: SureSliceInstance, ...: any): any>?
----@field net table<string, fun(slice: SureSliceInstance, ...: any): any>?
----@field watch table<string, fun(slice: SureSliceInstance, value: any, previous: any): any>?
----@field commands table<string, fun(slice: SureSliceInstance, source: integer, args: string[], rawCommand: string): any>?
----@field onLoad fun(slice: SureSliceInstance)?
----@field onUnload fun(slice: SureSliceInstance)?
+---@class SureSliceSpec<T>
+---@field state T?
+---@field actions table<string, fun(slice: SureSliceInstance<T>, ...: any): any>?
+---@field on table<string, fun(slice: SureSliceInstance<T>, ...: any): any>?
+---@field net table<string, fun(slice: SureSliceInstance<T>, ...: any): any>?
+---@field watch table<string, fun(slice: SureSliceInstance<T>, value: any, previous: any): any>?
+---@field commands table<string, fun(slice: SureSliceInstance<T>, source: integer, args: string[], rawCommand: string): any>?
+---@field onLoad fun(slice: SureSliceInstance<T>)?
+---@field onUnload fun(slice: SureSliceInstance<T>)?
 
----@alias SureSlice fun(name: string): fun(spec: SureSliceSpec): SureSliceInstance
+--- Create a slice. Annotate the `state` field type to drive autocomplete:
+---
+---     ---@class FarmingState
+---     ---@field entities { key: string, model: string, coords: vector3 }[]
+---
+---     local slice = sure.getModule('slice') --[[@as SureSlice]]
+---
+---     local farming = slice 'farming' {
+---       state = ({ entities = {} }) --[[@as FarmingState]],
+---       actions = {
+---         addEntity = function(s, item)
+---           s.state.entities[#s.state.entities + 1] = item
+---         end,
+---       },
+---     }
+---
+---@alias SureSlice fun(name: string): SureSliceBuilder
+
+---@generic T
+---@alias SureSliceBuilder fun(spec: SureSliceSpec<T>): SureSliceInstance<T>
 
 ---@class SureDb
 ---@field schema fun(self: SureDb, name: string, definition: table): SureDbModel
