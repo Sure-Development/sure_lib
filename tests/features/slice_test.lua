@@ -194,6 +194,233 @@ h.test('slice snapshot returns a shallow copy of current state', function()
   h.assertEqual(5, snap.streak)
 end)
 
+h.test('slice ref mounts handler for each item on initial state', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local mounted = {}
+
+  local duty = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', value = 1 },
+        { key = 'b', value = 2 },
+      },
+    },
+  })
+
+  duty:ref('entities', function(item)
+    mounted[item.key] = item.value
+  end)
+
+  h.assertEqual(1, mounted.a)
+  h.assertEqual(2, mounted.b)
+end)
+
+h.test('slice ref only mounts newly added items on update', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local mountCalls = {}
+
+  local duty = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', value = 1 },
+      },
+    },
+  })
+
+  duty:ref('entities', function(item)
+    mountCalls[#mountCalls + 1] = item.key
+  end)
+
+  duty.state.entities = {
+    { key = 'a', value = 1 },
+    { key = 'b', value = 2 },
+  }
+
+  h.assertEqual(2, #mountCalls)
+  h.assertEqual('a', mountCalls[1])
+  h.assertEqual('b', mountCalls[2])
+end)
+
+h.test('slice ref runs cleanup only for removed items', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local cleaned = {}
+
+  local duty = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', value = 1 },
+        { key = 'b', value = 2 },
+      },
+    },
+  })
+
+  duty:ref('entities', function(item)
+    return function()
+      cleaned[#cleaned + 1] = item.key
+    end
+  end)
+
+  duty.state.entities = {
+    { key = 'a', value = 1 },
+  }
+
+  h.assertEqual(1, #cleaned)
+  h.assertEqual('b', cleaned[1])
+end)
+
+h.test('slice ref remounts only items whose nested content changes', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local mountCount = { a = 0, b = 0 }
+  local cleanupCount = { a = 0, b = 0 }
+
+  local duty = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', coords = { x = 0, y = 0, z = 0 } },
+        { key = 'b', coords = { x = 1, y = 1, z = 1 } },
+      },
+    },
+  })
+
+  duty:ref('entities', function(item)
+    mountCount[item.key] = mountCount[item.key] + 1
+    return function()
+      cleanupCount[item.key] = cleanupCount[item.key] + 1
+    end
+  end)
+
+  duty.state.entities = {
+    { key = 'a', coords = { x = 5, y = 5, z = 5 } },
+    { key = 'b', coords = { x = 1, y = 1, z = 1 } },
+  }
+
+  h.assertEqual(2, mountCount.a)
+  h.assertEqual(1, cleanupCount.a)
+  h.assertEqual(1, mountCount.b)
+  h.assertEqual(0, cleanupCount.b)
+end)
+
+h.test('slice ref skips reconciliation when array is structurally identical', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local mountCount = 0
+
+  local duty = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', value = 1 },
+      },
+    },
+  })
+
+  duty:ref('entities', function()
+    mountCount = mountCount + 1
+  end)
+
+  duty.state.entities = {
+    { key = 'a', value = 1 },
+  }
+
+  h.assertEqual(1, mountCount)
+end)
+
+h.test('slice ref errors on duplicate keys', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local duty = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', value = 1 },
+        { key = 'a', value = 2 },
+      },
+    },
+  })
+
+  h.assertErrorContains(function()
+    duty:ref('entities', function() end)
+  end, 'duplicate key a')
+end)
+
+h.test('slice ref errors when an item is missing the key field', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local duty = slice('world')({
+    state = {
+      entities = {
+        { value = 1 },
+      },
+    },
+  })
+
+  h.assertErrorContains(function()
+    duty:ref('entities', function() end)
+  end, 'missing required field "key"')
+end)
+
+h.test('slice ref handler without a returned cleanup runs no cleanup on remove', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local cleaned = false
+
+  local duty = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', value = 1 },
+      },
+    },
+  })
+
+  duty:ref('entities', function()
+    -- no return = no cleanup
+  end)
+
+  duty.state.entities = {}
+
+  h.assertFalse(cleaned)
+end)
+
+h.test('slice ref dispose unmounts all current items and stops watching', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local cleaned = {}
+  local mountCount = 0
+
+  local duty = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', value = 1 },
+        { key = 'b', value = 2 },
+      },
+    },
+  })
+
+  local dispose = duty:ref('entities', function(item)
+    mountCount = mountCount + 1
+    return function()
+      cleaned[#cleaned + 1] = item.key
+    end
+  end)
+
+  dispose()
+
+  table.sort(cleaned)
+  h.assertEqual(2, mountCount)
+  h.assertEqual('a', cleaned[1])
+  h.assertEqual('b', cleaned[2])
+
+  duty.state.entities = {
+    { key = 'c', value = 3 },
+  }
+
+  h.assertEqual(2, mountCount)
+end)
+
 h.test('slice rejects invalid spec or name', function()
   h.reset('client')
   local slice = h.load('shared/modules/slice/index.lua')

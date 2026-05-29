@@ -101,6 +101,35 @@ return slice 'duty' {
 - `commands` registers `<sliceName>:<commandName>` console commands.
 - `onLoad` / `onUnload` only fire for the current resource.
 
+### Keyed reactive list with `slice:ref`
+
+`slice:ref(stateKey, fn)` watches an array of items, calls `fn(item, index)` for every new item, and re-runs only when an individual item's content changes (deep equal). Removed items run their cleanup function; unchanged items are left alone. Duplicate `key` values raise an error.
+
+```lua
+return slice 'world' {
+  state = {
+    entities = {
+      { key = 'guard-1', entity = 0, coords = vector3(0, 0, 0) },
+    },
+  },
+
+  onLoad = function(s)
+    s:ref('entities', function(item)
+      local ped = createGuard(item.coords)
+
+      return function()
+        DeleteEntity(ped)
+      end
+    end)
+  end,
+}
+```
+
+- Each item must expose a `key` field (`string` or `number`).
+- Return a function from `fn` to register a cleanup; omit the return for no-op cleanup.
+- `ref` returns a `dispose` function that unmounts every active item and stops watching.
+- The watcher fires when the array reference changes — assign a new table to `state.<key>` to trigger reconciliation.
+
 For Lua UI, point your resource NUI page at the bundled renderer:
 
 ```lua

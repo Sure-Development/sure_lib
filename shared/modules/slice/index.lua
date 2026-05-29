@@ -1,6 +1,43 @@
 local hook = require('@sure_lib.shared.modules.hook.index')
 local logModule = require('@sure_lib.shared.modules.log.index')
 
+local function deepClone(value)
+  if type(value) ~= 'table' then
+    return value
+  end
+
+  local cloned = {}
+  for key, item in pairs(value) do
+    cloned[key] = deepClone(item)
+  end
+
+  return cloned
+end
+
+local function deepEqual(a, b)
+  if a == b then
+    return true
+  end
+
+  if type(a) ~= 'table' or type(b) ~= 'table' then
+    return false
+  end
+
+  for key, value in pairs(a) do
+    if not deepEqual(value, b[key]) then
+      return false
+    end
+  end
+
+  for key in pairs(b) do
+    if a[key] == nil then
+      return false
+    end
+  end
+
+  return true
+end
+
 local function buildState(initial, watchers)
   local data = {}
   if type(initial) == 'table' then
@@ -109,6 +146,113 @@ local function buildSlice(name, spec)
     end
 
     return copy
+  end
+
+  function slice:ref(stateKey, handler)
+    if type(stateKey) ~= 'string' or stateKey == '' then
+      error('[sure_lib][slice] ref: stateKey must be a non-empty string', 2)
+    end
+
+    if type(handler) ~= 'function' then
+      error('[sure_lib][slice] ref: handler must be a function', 2)
+    end
+
+    local cleanups = {}
+    local snapshots = {}
+    local disposed = false
+
+    local function unmount(itemKey)
+      local cleanup = cleanups[itemKey]
+      cleanups[itemKey] = nil
+      snapshots[itemKey] = nil
+      if type(cleanup) == 'function' then
+        local ok, err = pcall(cleanup)
+        if not ok then
+          slice.log.error(('ref cleanup for %s failed: %s'):format(tostring(itemKey), tostring(err)))
+        end
+      end
+    end
+
+    local function mount(item, index)
+      local ok, result = pcall(handler, item, index)
+      if not ok then
+        slice.log.error(('ref handler for %s failed: %s'):format(tostring(item.key), tostring(result)))
+        return
+      end
+
+      if type(result) == 'function' then
+        cleanups[item.key] = result
+      end
+
+      snapshots[item.key] = deepClone(item)
+    end
+
+    local function reconcile(list)
+      if disposed then
+        return
+      end
+
+      list = list or {}
+      if type(list) ~= 'table' then
+        error(('[sure_lib][slice] ref: state.%s must be a table or nil'):format(stateKey), 2)
+      end
+
+      local nextByKey = {}
+      local order = {}
+
+      for index, item in ipairs(list) do
+        if type(item) ~= 'table' then
+          error(('[sure_lib][slice] ref(%s): item #%d is not a table'):format(stateKey, index), 2)
+        end
+
+        local itemKey = item.key
+        if itemKey == nil then
+          error(('[sure_lib][slice] ref(%s): item #%d missing required field "key"'):format(stateKey, index), 2)
+        end
+
+        if nextByKey[itemKey] ~= nil then
+          error(('[sure_lib][slice] ref(%s): duplicate key %s'):format(stateKey, tostring(itemKey)), 2)
+        end
+
+        nextByKey[itemKey] = { item = item, index = index }
+        order[#order + 1] = itemKey
+      end
+
+      for itemKey in pairs(snapshots) do
+        if nextByKey[itemKey] == nil then
+          unmount(itemKey)
+        end
+      end
+
+      for _, itemKey in ipairs(order) do
+        local entry = nextByKey[itemKey]
+        local previousSnapshot = snapshots[itemKey]
+
+        if previousSnapshot == nil then
+          mount(entry.item, entry.index)
+        elseif not deepEqual(previousSnapshot, entry.item) then
+          unmount(itemKey)
+          mount(entry.item, entry.index)
+        end
+      end
+    end
+
+    reconcile(rawState[stateKey])
+
+    appendWatcher(watchers, stateKey, function(value)
+      reconcile(value)
+    end)
+
+    return function()
+      if disposed then
+        return
+      end
+
+      disposed = true
+      for itemKey in pairs(snapshots) do
+        unmount(itemKey)
+      end
+    end
   end
 
   if type(spec.actions) == 'table' then
