@@ -387,7 +387,7 @@ local function buildSlice(name, spec)
         if nearby ~= nil then
           function point:nearby()
             local triggered = nearby(slice, item, ctx)
-            if triggered == true and action ~= nil then
+            if triggered and action ~= nil then
               action(slice, item, ctx)
             end
           end
