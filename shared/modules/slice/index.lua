@@ -103,6 +103,7 @@ local function buildSlice(name, spec)
   local watchers = {}
   local state, rawState = buildState(spec.state, watchers)
   local emitNameCache = {}
+  local refDisposers = {}
 
   local function resolveEventName(eventName)
     local cached = emitNameCache[eventName]
@@ -285,7 +286,7 @@ local function buildSlice(name, spec)
       reconcile(value)
     end)
 
-    return function()
+    local function dispose()
       if disposed then
         return
       end
@@ -295,6 +296,9 @@ local function buildSlice(name, spec)
         unmount(itemKey)
       end
     end
+
+    refDisposers[#refDisposers + 1] = dispose
+    return dispose
   end
 
   if type(spec.actions) == 'table' then
@@ -363,13 +367,27 @@ local function buildSlice(name, spec)
     end)
   end
 
-  if type(spec.onUnload) == 'function' then
-    AddEventHandler('onResourceStop', function(resource)
-      if resourceName == nil or resource == resourceName then
-        spec.onUnload(slice)
+  AddEventHandler('onResourceStop', function(resource)
+    if resourceName ~= nil and resource ~= resourceName then
+      return
+    end
+
+    if type(spec.onUnload) == 'function' then
+      local ok, err = pcall(spec.onUnload, slice)
+      if not ok then
+        slice.log.error(('onUnload failed: %s'):format(tostring(err)))
       end
-    end)
-  end
+    end
+
+    for index = #refDisposers, 1, -1 do
+      local dispose = refDisposers[index]
+      refDisposers[index] = nil
+      local ok, err = pcall(dispose)
+      if not ok then
+        slice.log.error(('ref dispose failed: %s'):format(tostring(err)))
+      end
+    end
+  end)
 
   return slice
 end

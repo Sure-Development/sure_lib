@@ -385,6 +385,66 @@ h.test('slice ref handler without a returned cleanup runs no cleanup on remove',
   h.assertFalse(cleaned)
 end)
 
+h.test('slice ref auto-disposes every active item when the resource stops', function()
+  local context = h.reset('client', { resourceName = 'myResource' })
+  local slice = h.load('shared/modules/slice/index.lua')
+  local cleaned = {}
+
+  local world = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', value = 1 },
+        { key = 'b', value = 2 },
+      },
+    },
+  })
+
+  world:ref('entities', function(item)
+    return function()
+      cleaned[#cleaned + 1] = item.key
+    end
+  end)
+
+  local handler = context.events['onResourceStop']
+  h.assertTrue(handler ~= nil)
+  handler('otherResource')
+  h.assertEqual(0, #cleaned)
+
+  handler('myResource')
+  table.sort(cleaned)
+  h.assertEqual(2, #cleaned)
+  h.assertEqual('a', cleaned[1])
+  h.assertEqual('b', cleaned[2])
+end)
+
+h.test('slice ref auto-dispose runs after spec.onUnload', function()
+  local context = h.reset('client', { resourceName = 'myResource' })
+  local slice = h.load('shared/modules/slice/index.lua')
+  local order = {}
+
+  local world = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', value = 1 },
+      },
+    },
+    onUnload = function()
+      order[#order + 1] = 'onUnload'
+    end,
+  })
+
+  world:ref('entities', function()
+    return function()
+      order[#order + 1] = 'refDispose'
+    end
+  end)
+
+  context.events['onResourceStop']('myResource')
+
+  h.assertEqual('onUnload', order[1])
+  h.assertEqual('refDispose', order[2])
+end)
+
 h.test('slice unmount drops a single item and triggers ref cleanup', function()
   h.reset('client')
   local slice = h.load('shared/modules/slice/index.lua')
