@@ -3,7 +3,7 @@ game 'gta5'
 
 name 'Lib'
 description 'Sure (Lib)'
-version '2.4.4'
+version '2.4.5'
 lua54 'yes'
 use_experimental_fxv2_oal 'yes'
 
