@@ -228,6 +228,9 @@ function harness.reset(side, options)
     entityOptions = {},
     points = {},
     entities = {},
+    networkedEntities = {},
+    controlledEntities = {},
+    missionEntities = {},
     nextHandle = options.nextHandle or 1000,
     currentTime = options.currentTime or 0,
     logs = {
@@ -495,6 +498,7 @@ function harness.reset(side, options)
     context.nextHandle = context.nextHandle + 1
     local handle = context.nextHandle
     context.entities[handle] = true
+    context.networkedEntities[handle] = networked == true
     context.spawnedPeds[#context.spawnedPeds + 1] = {
       handle = handle,
       pedType = pedType,
@@ -514,6 +518,7 @@ function harness.reset(side, options)
     context.nextHandle = context.nextHandle + 1
     local handle = context.nextHandle
     context.entities[handle] = true
+    context.networkedEntities[handle] = networked == true
     context.spawnedObjects[#context.spawnedObjects + 1] = {
       handle = handle,
       modelHash = modelHash,
@@ -600,9 +605,22 @@ function harness.reset(side, options)
     return context.entities[handle] == true
   end
 
+  _G.NetworkGetEntityIsNetworked = function(handle)
+    return context.networkedEntities[handle] == true
+  end
+
+  _G.NetworkRequestControlOfEntity = function(handle)
+    context.controlledEntities[handle] = true
+  end
+
+  _G.SetEntityAsMissionEntity = function(handle, value, force)
+    context.missionEntities[handle] = { value = value, force = force }
+  end
+
   _G.DeleteEntity = function(handle)
     context.deletedEntities[#context.deletedEntities + 1] = handle
     context.entities[handle] = nil
+    context.networkedEntities[handle] = nil
   end
 
   harness.registerResourceModules()
