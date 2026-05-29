@@ -259,7 +259,7 @@ local function buildSlice(name, spec)
             for _, handler in ipairs(list) do
               local watcherOk, watcherErr = pcall(handler, current, previous)
               if not watcherOk then
-                slice.log.error(('transaction watcher for %s failed: %s'):format(key, tostring(watcherErr)))
+                slice.log:error(('transaction watcher for %s failed: %s'):format(key, tostring(watcherErr)))
               end
             end
           end
@@ -353,7 +353,7 @@ local function buildSlice(name, spec)
         elseif spawnConfig.type == 'object' then
           ctx.entity = spawnModule:object(model, coords, options)
         else
-          slice.log.warn(('interact(%s): unsupported spawn.type %s'):format(stateKey, tostring(spawnConfig.type)))
+          slice.log:warn(('interact(%s): unsupported spawn.type %s'):format(stateKey, tostring(spawnConfig.type)))
         end
       end
 
@@ -491,7 +491,7 @@ local function buildSlice(name, spec)
       if ok then
         drop = result == true
       else
-        slice.log.error(('removeBy(%s) predicate failed: %s'):format(stateKey, tostring(result)))
+        slice.log:error(('removeBy(%s) predicate failed: %s'):format(stateKey, tostring(result)))
       end
 
       if drop then
@@ -559,7 +559,7 @@ local function buildSlice(name, spec)
       if type(cleanup) == 'function' then
         local ok, err = pcall(cleanup)
         if not ok then
-          slice.log.error(('ref cleanup for %s failed: %s'):format(tostring(itemKey), tostring(err)))
+          slice.log:error(('ref cleanup for %s failed: %s'):format(tostring(itemKey), tostring(err)))
         end
       end
     end
@@ -567,7 +567,7 @@ local function buildSlice(name, spec)
     local function mount(item, index)
       local ok, result = pcall(handler, item, index)
       if not ok then
-        slice.log.error(('ref handler for %s failed: %s'):format(tostring(item.key), tostring(result)))
+        slice.log:error(('ref handler for %s failed: %s'):format(tostring(item.key), tostring(result)))
         return
       end
 
@@ -882,7 +882,7 @@ local function buildSlice(name, spec)
       end
 
       if direction ~= 'sender' and direction ~= 'receiver' then
-        slice.log.warn(('netSync.%s: invalid direction %s'):format(tostring(stateKey), tostring(direction)))
+        slice.log:warn(('netSync.%s: invalid direction %s'):format(tostring(stateKey), tostring(direction)))
       else
         local eventName = syncEventName(stateKey)
 
@@ -917,7 +917,7 @@ local function buildSlice(name, spec)
 
             if not isKeyedArray(value) then
               if isKeyedArray(snapshot) then
-                slice.log.warn(('netSync.%s: value is no longer a keyed array; falling back to full sync'):format(stateKey))
+                slice.log:warn(('netSync.%s: value is no longer a keyed array; falling back to full sync'):format(stateKey))
               end
               snapshot = nil
               broadcast({ full = value })
@@ -999,7 +999,7 @@ local function buildSlice(name, spec)
           if elapsed >= interval then
             local ok, err = pcall(handlers[interval], slice)
             if not ok then
-              slice.log.error(('every[%s] failed: %s'):format(interval, tostring(err)))
+              slice.log:error(('every[%s] failed: %s'):format(interval, tostring(err)))
             end
             lastFired[interval] = now
             elapsed = 0
@@ -1053,7 +1053,7 @@ local function buildSlice(name, spec)
     if type(spec.onUnload) == 'function' then
       local ok, err = pcall(spec.onUnload, slice)
       if not ok then
-        slice.log.error(('onUnload failed: %s'):format(tostring(err)))
+        slice.log:error(('onUnload failed: %s'):format(tostring(err)))
       end
     end
 
@@ -1062,7 +1062,7 @@ local function buildSlice(name, spec)
       refDisposers[index] = nil
       local ok, err = pcall(dispose)
       if not ok then
-        slice.log.error(('ref dispose failed: %s'):format(tostring(err)))
+        slice.log:error(('ref dispose failed: %s'):format(tostring(err)))
       end
     end
   end)
