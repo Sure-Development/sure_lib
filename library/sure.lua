@@ -196,6 +196,21 @@ function sure.getModule(name) end
 ---@field emitServer fun(self: SureSliceInstance, eventName: string, ...: any): SureSliceInstance
 ---@field ref fun(self: SureSliceInstance, stateKey: string, handler: SureSliceRefHandler): fun()
 ---@field unmount fun(self: SureSliceInstance, stateKey: string, itemKey: string|number): SureSliceInstance
+---@field transaction fun(self: SureSliceInstance, fn: fun(slice: SureSliceInstance)): SureSliceInstance
+---@field scope fun(self: SureSliceInstance, name: string): SureSliceScope
+
+---@class SureSliceScope
+---@field name string
+---@field add fun(self: SureSliceScope, idOrIdentifier: integer|string): SureSliceScope
+---@field remove fun(self: SureSliceScope, idOrIdentifier: integer|string): SureSliceScope
+---@field list fun(self: SureSliceScope): integer[]
+---@field contains fun(self: SureSliceScope, playerId: integer): boolean
+
+---@alias SureSliceNetSyncDirection 'sender'|'receiver'
+
+---@class SureSliceNetSyncConfig
+---@field direction SureSliceNetSyncDirection
+---@field scope string?
 
 ---@alias SureSliceRefCleanup fun()
 ---@alias SureSliceRefHandler fun(item: table, index: integer): SureSliceRefCleanup?
@@ -207,6 +222,8 @@ function sure.getModule(name) end
 ---@field net table<string, function>?
 ---@field watch table<string, function>?
 ---@field commands table<string, function>?
+---@field every table<integer, function>?
+---@field netSync table<string, SureSliceNetSyncDirection|SureSliceNetSyncConfig>?
 ---@field onLoad function?
 ---@field onUnload function?
 

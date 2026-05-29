@@ -534,6 +534,359 @@ h.test('slice ref dispose unmounts all current items and stops watching', functi
   h.assertEqual(2, mountCount)
 end)
 
+h.test('slice scope add stores player ids and lists them', function()
+  h.reset('server')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({ state = {} })
+  local farmers = world:scope('farmers')
+
+  farmers:add(1)
+  farmers:add(2)
+  farmers:add(1)
+
+  local list = farmers:list()
+  table.sort(list)
+  h.assertEqual(2, #list)
+  h.assertEqual(1, list[1])
+  h.assertEqual(2, list[2])
+  h.assertTrue(farmers:contains(1))
+  h.assertFalse(farmers:contains(99))
+
+  farmers:remove(1)
+  h.assertFalse(farmers:contains(1))
+end)
+
+h.test('slice scope resolves ESX identifiers via ESX.GetPlayerFromIdentifier', function()
+  h.reset('server')
+  _G.ESX = {
+    GetPlayerFromIdentifier = function(identifier)
+      if identifier == 'license:abc' then
+        return { source = 42 }
+      end
+      return nil
+    end,
+  }
+
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({ state = {} })
+  local farmers = world:scope('farmers')
+
+  farmers:add('license:abc')
+  farmers:add('license:missing')
+
+  local list = farmers:list()
+  h.assertEqual(1, #list)
+  h.assertEqual(42, list[1])
+  h.assertTrue(farmers:contains(42))
+end)
+
+h.test('slice netSync sender broadcasts state changes to all clients by default', function()
+  local context = h.reset('server')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = { count = 0 },
+    netSync = { count = 'sender' },
+  })
+
+  world.state.count = 7
+
+  h.assertEqual(1, #context.clientEvents)
+  h.assertEqual('world:sync:count', context.clientEvents[1].name)
+  h.assertEqual(-1, context.clientEvents[1].target)
+  h.assertEqual(7, context.clientEvents[1].args[1])
+end)
+
+h.test('slice netSync sender with scope emits only to scope members', function()
+  local context = h.reset('server')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = { count = 0 },
+    netSync = {
+      count = { direction = 'sender', scope = 'farmers' },
+    },
+  })
+
+  local farmers = world:scope('farmers')
+
+  context.clientEvents = {}
+  world.state.count = 1
+  h.assertEqual(0, #context.clientEvents)
+
+  farmers:add(5)
+  h.assertEqual(1, #context.clientEvents)
+  h.assertEqual(5, context.clientEvents[1].target)
+  h.assertEqual(1, context.clientEvents[1].args[1])
+
+  context.clientEvents = {}
+  world.state.count = 2
+  h.assertEqual(1, #context.clientEvents)
+  h.assertEqual(5, context.clientEvents[1].target)
+  h.assertEqual(2, context.clientEvents[1].args[1])
+
+  farmers:add(6)
+  h.assertEqual(2, #context.clientEvents)
+  h.assertEqual(6, context.clientEvents[2].target)
+  h.assertEqual(2, context.clientEvents[2].args[1])
+
+  context.clientEvents = {}
+  world.state.count = 3
+  table.sort(context.clientEvents, function(a, b)
+    return a.target < b.target
+  end)
+  h.assertEqual(2, #context.clientEvents)
+  h.assertEqual(5, context.clientEvents[1].target)
+  h.assertEqual(6, context.clientEvents[2].target)
+end)
+
+h.test('slice netSync receiver mirrors incoming net events into state', function()
+  local context = h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = { count = 0 },
+    netSync = { count = 'receiver' },
+  })
+
+  local handler = context.events['world:sync:count']
+  h.assertTrue(handler ~= nil)
+  handler(42)
+  h.assertEqual(42, world.state.count)
+end)
+
+h.test('slice netSync sender on client triggers a server event', function()
+  local context = h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = { count = 0 },
+    netSync = { count = 'sender' },
+  })
+
+  world.state.count = 5
+  h.assertEqual(1, #context.serverEvents)
+  h.assertEqual('world:sync:count', context.serverEvents[1].name)
+  h.assertEqual(5, context.serverEvents[1].args[1])
+end)
+
+h.test('slice transaction fires each watcher once with net change', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local fires = { onDuty = 0, streak = 0 }
+  local seen = {}
+
+  local duty = slice('duty')({
+    state = { onDuty = false, streak = 0 },
+    watch = {
+      onDuty = function(_, value, previous)
+        fires.onDuty = fires.onDuty + 1
+        seen.onDuty = { value = value, previous = previous }
+      end,
+      streak = function(_, value, previous)
+        fires.streak = fires.streak + 1
+        seen.streak = { value = value, previous = previous }
+      end,
+    },
+  })
+
+  duty:transaction(function(s)
+    s.state.onDuty = true
+    s.state.streak = 1
+    s.state.streak = 2
+    s.state.streak = 3
+  end)
+
+  h.assertEqual(1, fires.onDuty)
+  h.assertEqual(1, fires.streak)
+  h.assertEqual(true, seen.onDuty.value)
+  h.assertEqual(false, seen.onDuty.previous)
+  h.assertEqual(3, seen.streak.value)
+  h.assertEqual(0, seen.streak.previous)
+end)
+
+h.test('slice transaction skips watcher when value ends at original', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local fires = 0
+
+  local duty = slice('duty')({
+    state = { onDuty = false },
+    watch = {
+      onDuty = function()
+        fires = fires + 1
+      end,
+    },
+  })
+
+  duty:transaction(function(s)
+    s.state.onDuty = true
+    s.state.onDuty = false
+  end)
+
+  h.assertEqual(0, fires)
+end)
+
+h.test('slice transaction handles nested calls and commits only at outer end', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+  local fires = 0
+
+  local duty = slice('duty')({
+    state = { streak = 0 },
+    watch = {
+      streak = function()
+        fires = fires + 1
+      end,
+    },
+  })
+
+  duty:transaction(function(s)
+    s.state.streak = 1
+    duty:transaction(function(inner)
+      inner.state.streak = 2
+    end)
+    h.assertEqual(0, fires)
+    s.state.streak = 3
+  end)
+
+  h.assertEqual(1, fires)
+  h.assertEqual(3, duty.state.streak)
+end)
+
+h.test('slice auto-generates setX actions for every state key', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local duty = slice('duty')({
+    state = {
+      onDuty = false,
+      streak = 0,
+    },
+  })
+
+  h.assertTrue(type(duty.actions.setOnDuty) == 'function')
+  h.assertTrue(type(duty.actions.setStreak) == 'function')
+
+  duty.actions.setOnDuty(true)
+  h.assertTrue(duty.state.onDuty)
+
+  duty.actions.setStreak(7)
+  h.assertEqual(7, duty.state.streak)
+end)
+
+h.test('slice spec.actions overrides auto-generated setters with the same name', function()
+  h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local duty = slice('duty')({
+    state = { onDuty = false },
+    actions = {
+      setOnDuty = function(s, value)
+        s.state.onDuty = value
+        return 'custom'
+      end,
+    },
+  })
+
+  local result = duty.actions.setOnDuty(true)
+  h.assertEqual('custom', result)
+  h.assertTrue(duty.state.onDuty)
+end)
+
+h.test('slice every fires each interval when enough time has elapsed', function()
+  h.reset('client')
+  _G.CreateThread = function() end
+  local slice = h.load('shared/modules/slice/index.lua')
+  local ticks = { [500] = 0, [1500] = 0 }
+
+  local world = slice('world')({
+    state = {},
+    every = {
+      [500] = function()
+        ticks[500] = ticks[500] + 1
+      end,
+      [1500] = function()
+        ticks[1500] = ticks[1500] + 1
+      end,
+    },
+  })
+
+  world:_tickEvery(0)
+  h.assertEqual(0, ticks[500])
+  h.assertEqual(0, ticks[1500])
+
+  world:_tickEvery(500)
+  h.assertEqual(1, ticks[500])
+  h.assertEqual(0, ticks[1500])
+
+  world:_tickEvery(750)
+  h.assertEqual(1, ticks[500])
+
+  world:_tickEvery(1000)
+  h.assertEqual(2, ticks[500])
+  h.assertEqual(0, ticks[1500])
+
+  world:_tickEvery(1500)
+  h.assertEqual(3, ticks[500])
+  h.assertEqual(1, ticks[1500])
+end)
+
+h.test('slice every returns the next due interval as suggested sleep', function()
+  h.reset('client')
+  _G.CreateThread = function() end
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = {},
+    every = {
+      [500] = function() end,
+      [1500] = function() end,
+    },
+  })
+
+  world:_tickEvery(0)
+  local sleep = world:_tickEvery(100)
+  h.assertEqual(400, sleep)
+
+  sleep = world:_tickEvery(500)
+  h.assertEqual(500, sleep)
+
+  sleep = world:_tickEvery(1500)
+  h.assertEqual(500, sleep)
+end)
+
+h.test('slice every ignores invalid entries', function()
+  h.reset('client')
+  _G.CreateThread = function() end
+  local slice = h.load('shared/modules/slice/index.lua')
+  local valid = 0
+
+  local world = slice('world')({
+    state = {},
+    every = {
+      [500] = function()
+        valid = valid + 1
+      end,
+      [-100] = function()
+        valid = valid + 1
+      end,
+      ['bad'] = function()
+        valid = valid + 1
+      end,
+      [200] = 'not a function',
+    },
+  })
+
+  world:_tickEvery(0)
+  world:_tickEvery(1000)
+  h.assertEqual(1, valid)
+  world:_tickEvery(1500)
+  h.assertEqual(2, valid)
+end)
+
 h.test('slice rejects invalid spec or name', function()
   h.reset('client')
   local slice = h.load('shared/modules/slice/index.lua')

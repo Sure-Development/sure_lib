@@ -38,7 +38,7 @@ local function deepEqual(a, b)
   return true
 end
 
-local function buildState(initial, watchers)
+local function buildState(initial, watchers, txContext)
   local data = {}
   if type(initial) == 'table' then
     for key, value in pairs(initial) do
@@ -59,6 +59,14 @@ local function buildState(initial, watchers)
       end
 
       data[key] = value
+
+      if txContext.depth > 0 then
+        if not txContext.touched[key] then
+          txContext.touched[key] = true
+          txContext.originals[key] = previous
+        end
+        return
+      end
 
       local list = watchers[key]
       if list == nil then
@@ -101,9 +109,13 @@ local function buildSlice(name, spec)
   end
 
   local watchers = {}
-  local state, rawState = buildState(spec.state, watchers)
+  local txContext = { depth = 0, touched = {}, originals = {} }
+  local state, rawState = buildState(spec.state, watchers, txContext)
   local emitNameCache = {}
   local refDisposers = {}
+  local stopped = false
+  local scopes = {}
+  local isServer = IsDuplicityVersion() == true
 
   local function resolveEventName(eventName)
     local cached = emitNameCache[eventName]
@@ -128,6 +140,45 @@ local function buildSlice(name, spec)
     end
 
     appendWatcher(watchers, key, handler)
+    return self
+  end
+
+  function slice:transaction(fn)
+    if type(fn) ~= 'function' then
+      error('[sure_lib][slice] transaction requires a function', 2)
+    end
+
+    txContext.depth = txContext.depth + 1
+    local ok, err = pcall(fn, self)
+    txContext.depth = txContext.depth - 1
+
+    if txContext.depth == 0 then
+      local touched = txContext.touched
+      local originals = txContext.originals
+      txContext.touched = {}
+      txContext.originals = {}
+
+      for key in pairs(touched) do
+        local current = rawState[key]
+        local previous = originals[key]
+        if current ~= previous then
+          local list = watchers[key]
+          if list ~= nil then
+            for _, handler in ipairs(list) do
+              local watcherOk, watcherErr = pcall(handler, current, previous)
+              if not watcherOk then
+                slice.log.error(('transaction watcher for %s failed: %s'):format(key, tostring(watcherErr)))
+              end
+            end
+          end
+        end
+      end
+    end
+
+    if not ok then
+      error(err, 2)
+    end
+
     return self
   end
 
@@ -301,6 +352,18 @@ local function buildSlice(name, spec)
     return dispose
   end
 
+  if type(spec.state) == 'table' then
+    for stateKey in pairs(spec.state) do
+      if type(stateKey) == 'string' and #stateKey > 0 then
+        local actionName = 'set' .. stateKey:sub(1, 1):upper() .. stateKey:sub(2)
+        slice.actions[actionName] = function(value)
+          state[stateKey] = value
+          return value
+        end
+      end
+    end
+  end
+
   if type(spec.actions) == 'table' then
     for actionName, action in pairs(spec.actions) do
       if type(action) == 'function' then
@@ -351,6 +414,237 @@ local function buildSlice(name, spec)
     end
   end
 
+  local function resolveIdentifier(identifier)
+    if not isServer then
+      return nil
+    end
+
+    local esx = _G.ESX
+    if esx == nil or type(esx.GetPlayerFromIdentifier) ~= 'function' then
+      return nil
+    end
+
+    local xPlayer = esx.GetPlayerFromIdentifier(identifier)
+    if xPlayer == nil then
+      return nil
+    end
+
+    return xPlayer.source
+  end
+
+  local function syncEventName(stateKey)
+    return name .. ':sync:' .. stateKey
+  end
+
+  local function buildScope(scopeName)
+    local playerIds = {}
+    local identifiers = {}
+    local bindings = {}
+
+    local scope = {
+      name = scopeName,
+    }
+
+    local function emitInitialTo(playerId)
+      if playerId == nil or not isServer then
+        return
+      end
+
+      for eventName, stateKey in pairs(bindings) do
+        TriggerClientEvent(eventName, playerId, rawState[stateKey])
+      end
+    end
+
+    function scope:add(idOrIdentifier)
+      if type(idOrIdentifier) == 'number' then
+        if not playerIds[idOrIdentifier] then
+          playerIds[idOrIdentifier] = true
+          emitInitialTo(idOrIdentifier)
+        end
+      elseif type(idOrIdentifier) == 'string' and idOrIdentifier ~= '' then
+        if not identifiers[idOrIdentifier] then
+          identifiers[idOrIdentifier] = true
+          emitInitialTo(resolveIdentifier(idOrIdentifier))
+        end
+      end
+
+      return self
+    end
+
+    function scope:remove(idOrIdentifier)
+      if type(idOrIdentifier) == 'number' then
+        playerIds[idOrIdentifier] = nil
+      elseif type(idOrIdentifier) == 'string' then
+        identifiers[idOrIdentifier] = nil
+      end
+
+      return self
+    end
+
+    function scope:list()
+      local out = {}
+      local seen = {}
+
+      for id in pairs(playerIds) do
+        if not seen[id] then
+          seen[id] = true
+          out[#out + 1] = id
+        end
+      end
+
+      for identifier in pairs(identifiers) do
+        local id = resolveIdentifier(identifier)
+        if id ~= nil and not seen[id] then
+          seen[id] = true
+          out[#out + 1] = id
+        end
+      end
+
+      return out
+    end
+
+    function scope:contains(playerId)
+      if playerIds[playerId] then
+        return true
+      end
+
+      for identifier in pairs(identifiers) do
+        if resolveIdentifier(identifier) == playerId then
+          return true
+        end
+      end
+
+      return false
+    end
+
+    function scope:_bind(eventName, stateKey)
+      bindings[eventName] = stateKey
+    end
+
+    return scope
+  end
+
+  function slice:scope(scopeName)
+    if type(scopeName) ~= 'string' or scopeName == '' then
+      error('[sure_lib][slice] scope: name must be a non-empty string', 2)
+    end
+
+    local existing = scopes[scopeName]
+    if existing == nil then
+      existing = buildScope(scopeName)
+      scopes[scopeName] = existing
+    end
+
+    return existing
+  end
+
+  if type(spec.netSync) == 'table' then
+    for stateKey, config in pairs(spec.netSync) do
+      local direction = nil
+      local scopeName = nil
+
+      if type(config) == 'string' then
+        direction = config
+      elseif type(config) == 'table' then
+        direction = config.direction
+        scopeName = config.scope
+      end
+
+      if direction ~= 'sender' and direction ~= 'receiver' then
+        slice.log.warn(('netSync.%s: invalid direction %s'):format(tostring(stateKey), tostring(direction)))
+      else
+        local eventName = syncEventName(stateKey)
+
+        if direction == 'sender' then
+          local boundScope = nil
+          if type(scopeName) == 'string' and scopeName ~= '' then
+            boundScope = slice:scope(scopeName)
+            boundScope:_bind(eventName, stateKey)
+          end
+
+          appendWatcher(watchers, stateKey, function(value)
+            if isServer then
+              if boundScope == nil then
+                TriggerClientEvent(eventName, -1, value)
+              else
+                for _, playerId in ipairs(boundScope:list()) do
+                  TriggerClientEvent(eventName, playerId, value)
+                end
+              end
+            else
+              TriggerServerEvent(eventName, value)
+            end
+          end)
+        elseif direction == 'receiver' then
+          if isServer then
+            RegisterNetEvent(eventName, function(value)
+              state[stateKey] = value
+            end)
+          else
+            RegisterNetEvent(eventName, function(value)
+              state[stateKey] = value
+            end)
+          end
+        end
+      end
+    end
+  end
+
+  if type(spec.every) == 'table' then
+    local intervals = {}
+    local handlers = {}
+    for interval, handler in pairs(spec.every) do
+      if type(interval) == 'number' and interval > 0 and type(handler) == 'function' then
+        intervals[#intervals + 1] = interval
+        handlers[interval] = handler
+      end
+    end
+
+    if #intervals > 0 then
+      table.sort(intervals)
+      local lastFired = {}
+
+      local function tick(now)
+        now = now or GetGameTimer()
+        local nextDueIn = math.huge
+
+        for _, interval in ipairs(intervals) do
+          if lastFired[interval] == nil then
+            lastFired[interval] = now
+          end
+
+          local elapsed = now - lastFired[interval]
+          if elapsed >= interval then
+            local ok, err = pcall(handlers[interval], slice)
+            if not ok then
+              slice.log.error(('every[%s] failed: %s'):format(interval, tostring(err)))
+            end
+            lastFired[interval] = now
+            elapsed = 0
+          end
+
+          local remaining = interval - elapsed
+          if remaining < nextDueIn then
+            nextDueIn = remaining
+          end
+        end
+
+        return nextDueIn == math.huge and 0 or math.max(nextDueIn, 0)
+      end
+
+      function slice:_tickEvery(now)
+        return tick(now)
+      end
+
+      CreateThread(function()
+        while not stopped do
+          local sleep = tick()
+          Wait(sleep)
+        end
+      end)
+    end
+  end
+
   local resourceName = nil
   if type(_G.GetCurrentResourceName) == 'function' then
     local ok, value = pcall(GetCurrentResourceName)
@@ -371,6 +665,8 @@ local function buildSlice(name, spec)
     if resourceName ~= nil and resource ~= resourceName then
       return
     end
+
+    stopped = true
 
     if type(spec.onUnload) == 'function' then
       local ok, err = pcall(spec.onUnload, slice)
