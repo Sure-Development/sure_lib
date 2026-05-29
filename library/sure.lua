@@ -184,8 +184,9 @@ function sure.getModule(name) end
 ---@field delete fun(self: SureDbModel, query: SureDbQueryOptions): integer?
 ---@field raw fun(self: SureDbModel, sql: string, params: any[]?): any
 
----@class SureSliceInstance<T>: { state: T }
+---@class SureSliceInstance<T>
 ---@field name string
+---@field state T
 ---@field actions table<string, fun(...): any>
 ---@field log SureLogger
 ---@field subscribe fun(self: SureSliceInstance<T>, key: string, handler: fun(value: any, previous: any)): SureSliceInstance<T>
