@@ -210,46 +210,48 @@ local function registerStreamEntry(kind, model, coords, heading, opts, scopeStat
     point = nil,
     scopeState = scopeState,
     spawned = false,
+    pending = false,
   }
 
-  local despawnRadius = spawnOnNear.despawnRadius or spawnOnNear.radius * 1.5
-  local watchDistance = math.max(despawnRadius * 1.5, spawnOnNear.radius * 2)
-
   local function despawn()
-    if entry.spawned then
-      deleteHandle(entry.handle, scopeState)
-      entry.handle = nil
-      entry.spawned = false
+    if not entry.spawned then
+      return
     end
+
+    deleteHandle(entry.handle, scopeState)
+    entry.handle = nil
+    entry.spawned = false
   end
+
+  local function spawnEntity()
+    if entry.spawned or entry.pending then
+      return
+    end
+
+    entry.pending = true
+    entry.handle = spawnEntityInternal(kind, model, coords, heading, cloneSpawnOpts(opts), scopeState)
+    entry.spawned = entry.handle ~= nil
+    entry.pending = false
+  end
+
+  local distance = spawnOnNear.despawnRadius or spawnOnNear.radius
 
   entry.point = lib.points.new({
     coords = spawnOnNear.coords,
-    distance = watchDistance,
+    distance = distance,
 
-    onEnter = function() end,
-
-    nearby = function(point)
-      local currentDistance = point.currentDistance
-
-      if not entry.spawned and currentDistance <= spawnOnNear.radius then
-        entry.handle = spawnEntityInternal(kind, model, coords, heading, cloneSpawnOpts(opts), scopeState)
-        entry.spawned = entry.handle ~= nil
-      elseif entry.spawned and currentDistance > despawnRadius then
-        despawn()
-      end
-
-      if entry.spawned and spawnOnNear.onNear then
-        spawnOnNear.onNear({
-          handle = entry.handle,
-          distance = currentDistance,
-          coords = spawnOnNear.coords,
-          spawned = entry.spawned,
-        })
-      end
-    end,
+    onEnter = spawnEntity,
 
     onExit = despawn,
+
+    nearby = spawnOnNear.onNear and function(point)
+      spawnOnNear.onNear({
+        handle = entry.handle,
+        distance = point.currentDistance,
+        coords = spawnOnNear.coords,
+        spawned = entry.spawned,
+      })
+    end or nil,
   })
 
   streamEntries[#streamEntries + 1] = entry
