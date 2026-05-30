@@ -25,42 +25,16 @@ local function resolveModel(model)
 end
 
 local function awaitModel(model, modelHash)
-  local modelPromise = promise.new()
+  if lib.requestModel(model) then
+    return true
+  end
 
-  CreateThread(function()
-    local timeout = GetGameTimer() + 10000
-    RequestModel(modelHash)
-
-    while not HasModelLoaded(modelHash) do
-      if GetGameTimer() >= timeout then
-        print('[sure_lib][spawn] model timeout: ' .. tostring(model))
-        modelPromise:resolve(false)
-        return
-      end
-
-      Wait(0)
-    end
-
-    modelPromise:resolve(true)
-  end)
-
-  return Citizen.Await(modelPromise)
+  return false
 end
 
 local function awaitAnimDict(dict)
-  local animPromise = promise.new()
-
-  CreateThread(function()
-    RequestAnimDict(dict)
-
-    while not HasAnimDictLoaded(dict) do
-      Wait(0)
-    end
-
-    animPromise:resolve(true)
-  end)
-
-  return Citizen.Await(animPromise)
+  local retval = pcall(lib.requestAnimDict, dict)
+  return retval
 end
 
 local function registerHandle(handle, scopeState)
