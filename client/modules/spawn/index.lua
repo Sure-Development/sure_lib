@@ -1,6 +1,7 @@
 local spawn = {}
 local registry = {}
 local streamEntries = {}
+local math = math
 local tostring = tostring
 local type = type
 
@@ -205,15 +206,22 @@ local function registerStreamEntry(kind, model, coords, heading, opts, scopeStat
     error('[sure_lib][spawn] spawnOnNear.radius is required', 3)
   end
 
+  local spawnRadius = spawnOnNear.radius
+  local despawnRadius = math.max(spawnOnNear.despawnRadius or spawnRadius, spawnRadius)
+  local onNear = spawnOnNear.onNear or opts.onNear
+
   local entry = {
     handle = nil,
     point = nil,
     scopeState = scopeState,
     spawned = false,
     pending = false,
+    wantsSpawn = false,
   }
 
   local function despawn()
+    entry.wantsSpawn = false
+
     if not entry.spawned then
       return
     end
@@ -224,34 +232,56 @@ local function registerStreamEntry(kind, model, coords, heading, opts, scopeStat
   end
 
   local function spawnEntity()
+    entry.wantsSpawn = true
+
     if entry.spawned or entry.pending then
       return
     end
 
     entry.pending = true
-    entry.handle = spawnEntityInternal(kind, model, coords, heading, cloneSpawnOpts(opts), scopeState)
-    entry.spawned = entry.handle ~= nil
-    entry.pending = false
+    CreateThread(function()
+      local handle = spawnEntityInternal(kind, model, coords, heading, cloneSpawnOpts(opts), scopeState)
+      entry.pending = false
+
+      if handle == nil then
+        entry.spawned = false
+        return
+      end
+
+      if not entry.wantsSpawn then
+        deleteHandle(handle, scopeState)
+        return
+      end
+
+      entry.handle = handle
+      entry.spawned = true
+    end)
   end
 
-  local distance = spawnOnNear.despawnRadius or spawnOnNear.radius
+  local function updateStream(point)
+    if point.currentDistance <= spawnRadius then
+      spawnEntity()
+    end
 
-  entry.point = lib.points.new({
-    coords = spawnOnNear.coords,
-    distance = distance,
-
-    onEnter = spawnEntity,
-
-    onExit = despawn,
-
-    nearby = spawnOnNear.onNear and function(point)
-      spawnOnNear.onNear({
+    if onNear then
+      onNear({
         handle = entry.handle,
         distance = point.currentDistance,
         coords = spawnOnNear.coords,
         spawned = entry.spawned,
       })
-    end or nil,
+    end
+  end
+
+  entry.point = lib.points.new({
+    coords = spawnOnNear.coords,
+    distance = despawnRadius,
+
+    onEnter = updateStream,
+
+    onExit = despawn,
+
+    nearby = updateStream,
   })
 
   streamEntries[#streamEntries + 1] = entry

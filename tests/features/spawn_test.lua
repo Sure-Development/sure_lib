@@ -74,6 +74,15 @@ h.test('spawnOnNear streams entities and cleans them up on exit', function()
   h.assertFalse(entry.spawned)
 
   context.points[1].nearby({
+    currentDistance = 6,
+  })
+
+  h.assertFalse(entry.spawned)
+  h.assertEqual(0, #context.spawnedPeds)
+  h.assertFalse(nearState.spawned)
+  h.assertEqual(6, nearState.distance)
+
+  context.points[1].nearby({
     currentDistance = 4,
   })
 
@@ -86,6 +95,35 @@ h.test('spawnOnNear streams entities and cleans them up on exit', function()
 
   h.assertFalse(entry.spawned)
   h.assertEqual(1001, context.deletedEntities[1])
+end)
+
+h.test('spawnOnNear accepts root onNear when explicit stream config is provided', function()
+  local nearState = nil
+  local context = h.reset('client', {
+    modelHashes = {
+      ['a_m_m_business_01'] = 123,
+    },
+  })
+  local spawn = h.load('client/modules/spawn/index.lua')
+
+  local entry = spawn:ped('a_m_m_business_01', { x = 1, y = 2, z = 3 }, 180, {
+    spawnOnNear = {
+      coords = { x = 50, y = 60, z = 70 },
+      radius = 5,
+      despawnRadius = 8,
+    },
+    onNear = function(state)
+      nearState = state
+    end,
+  })
+
+  context.points[1].nearby({
+    currentDistance = 4,
+  })
+
+  h.assertTrue(entry.spawned)
+  h.assertEqual(1001, nearState.handle)
+  h.assertEqual(4, nearState.distance)
 end)
 
 h.test('spawnOnNear requires radius to avoid invalid point distances', function()
