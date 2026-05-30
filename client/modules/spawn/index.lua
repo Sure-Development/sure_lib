@@ -212,35 +212,44 @@ local function registerStreamEntry(kind, model, coords, heading, opts, scopeStat
     spawned = false,
   }
 
+  local despawnRadius = spawnOnNear.despawnRadius or spawnOnNear.radius * 1.5
+  local watchDistance = math.max(despawnRadius * 1.5, spawnOnNear.radius * 2)
+
+  local function despawn()
+    if entry.spawned then
+      deleteHandle(entry.handle, scopeState)
+      entry.handle = nil
+      entry.spawned = false
+    end
+  end
+
   entry.point = lib.points.new({
     coords = spawnOnNear.coords,
-    distance = spawnOnNear.despawnRadius or spawnOnNear.radius * 1.5,
+    distance = watchDistance,
 
     onEnter = function() end,
 
     nearby = function(point)
-      if not entry.spawned and point.currentDistance <= spawnOnNear.radius then
+      local currentDistance = point.currentDistance
+
+      if not entry.spawned and currentDistance <= spawnOnNear.radius then
         entry.handle = spawnEntityInternal(kind, model, coords, heading, cloneSpawnOpts(opts), scopeState)
         entry.spawned = entry.handle ~= nil
+      elseif entry.spawned and currentDistance > despawnRadius then
+        despawn()
       end
 
       if entry.spawned and spawnOnNear.onNear then
         spawnOnNear.onNear({
           handle = entry.handle,
-          distance = point.currentDistance,
+          distance = currentDistance,
           coords = spawnOnNear.coords,
           spawned = entry.spawned,
         })
       end
     end,
 
-    onExit = function()
-      if entry.spawned then
-        deleteHandle(entry.handle, scopeState)
-        entry.handle = nil
-        entry.spawned = false
-      end
-    end,
+    onExit = despawn,
   })
 
   streamEntries[#streamEntries + 1] = entry
