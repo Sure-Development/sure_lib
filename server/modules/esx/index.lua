@@ -1,5 +1,26 @@
 local app = {}
-local ESX = exports.es_extended:getSharedObject()
+
+-- es_extended depends on sure_lib, so it starts AFTER us. Resolve the shared object
+-- asynchronously (poll every 1s) instead of at load time — a blocking wait here would
+-- deadlock (sure_lib waiting on es_extended while es_extended waits on sure_lib to boot),
+-- and calling the export before es_extended is started throws "No such export".
+local ESX
+CreateThread(function()
+  while ESX == nil do
+    if GetResourceState('es_extended') == 'started' then
+      local ok, obj = pcall(function()
+        return exports.es_extended:getSharedObject()
+      end)
+      if ok and obj then
+        ESX = obj
+      end
+    end
+    if ESX == nil then
+      Wait(1000)
+    end
+  end
+end)
+
 local unpack = table.unpack
 
 local actionToFuncs = {
