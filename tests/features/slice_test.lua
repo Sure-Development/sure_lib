@@ -536,6 +536,39 @@ h.test('slice interact supports ped spawn with heading', function()
   h.assertEqual(90.0, context.spawnedPeds[1].heading)
 end)
 
+h.test('slice interact streamRadius defers spawn and wires stream point at item coords', function()
+  local context = h.reset('client')
+  local slice = h.load('shared/modules/slice/index.lua')
+
+  local world = slice('world')({
+    state = {
+      entities = {
+        { key = 'a', model = 'prop_rock_3_g', coords = { x = 100, y = 200, z = 30 }, range = 2.0 },
+      },
+    },
+  })
+
+  world:interact('entities', {
+    spawn = {
+      type = 'object',
+      streamRadius = 50.0,
+      despawnRadius = 60.0,
+      options = { freeze = true },
+    },
+    onEnter = function() end,
+  })
+
+  h.assertEqual(0, #context.spawnedObjects)
+  h.assertEqual(2, #context.points)
+
+  local streamPoint = context.points[1]
+  h.assertEqual(60.0, streamPoint.distance)
+  h.assertEqual(100, streamPoint.coords.x)
+
+  local interactPoint = context.points[2]
+  h.assertEqual(2.0, interactPoint.distance)
+end)
+
 h.test('slice interact action fires when nearby predicate returns true', function()
   local context = h.reset('client')
   local slice = h.load('shared/modules/slice/index.lua')

@@ -206,6 +206,7 @@ function sure.getModule(name) end
 ---@class SureSliceInteractContext
 ---@field entity? integer
 ---@field point? any
+---@field stream? any
 
 ---@class SureSliceInteractSpawn
 ---@field type 'ped'|'object'
@@ -213,6 +214,8 @@ function sure.getModule(name) end
 ---@field coordsFrom? string
 ---@field headingFrom? string
 ---@field options? table
+---@field streamRadius? number
+---@field despawnRadius? number
 
 ---@class SureSliceInteractSpec
 ---@field spawn? SureSliceInteractSpawn

@@ -187,6 +187,14 @@ local function deleteEntry(entry)
   entry.spawned = false
 end
 
+local function attachDispose(entry)
+  function entry:dispose()
+    deleteEntry(entry)
+  end
+
+  return entry
+end
+
 local function registerStreamEntry(kind, model, coords, heading, opts, scopeState)
   local spawnOnNear = opts.spawnOnNear
   if spawnOnNear.coords == nil then
@@ -240,7 +248,7 @@ local function registerStreamEntry(kind, model, coords, heading, opts, scopeStat
     scopeState.entries[#scopeState.entries + 1] = entry
   end
 
-  return entry
+  return attachDispose(entry)
 end
 
 local function spawnPed(model, coords, heading, opts, scopeState)

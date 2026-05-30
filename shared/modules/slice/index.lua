@@ -344,7 +344,6 @@ local function buildSlice(name, spec)
         local spawnCoordsKey = spawnConfig.coordsFrom or coordsFrom
         local model = item[modelKey]
         local coords = item[spawnCoordsKey]
-        local options = spawnConfig.options
 
         if type(model) ~= 'string' and type(model) ~= 'number' then
           error(('[sure_lib][slice] interact(%s): item.%s must be a model string or hash, got %s'):format(stateKey, modelKey, type(model)), 2)
@@ -354,12 +353,43 @@ local function buildSlice(name, spec)
           error(('[sure_lib][slice] interact(%s): item.%s must be a vector3 or table with x/y/z, got %s (value: %s)'):format(stateKey, spawnCoordsKey, type(coords), tostring(coords)), 2)
         end
 
+        local options = nil
+        if type(spawnConfig.options) == 'table' then
+          options = {}
+          for key, value in pairs(spawnConfig.options) do
+            options[key] = value
+          end
+        end
+
+        local streaming = type(spawnConfig.streamRadius) == 'number' and spawnConfig.streamRadius > 0
+        if streaming then
+          options = options or {}
+          options.spawnOnNear = {
+            coords = coords,
+            radius = spawnConfig.streamRadius,
+            despawnRadius = spawnConfig.despawnRadius,
+            onNear = function(streamState)
+              ctx.entity = streamState.handle
+            end,
+          }
+        end
+
         if spawnConfig.type == 'ped' then
           local headingKey = spawnConfig.headingFrom or 'heading'
           local heading = item[headingKey] or 0.0
-          ctx.entity = spawnModule:ped(model, coords, heading, options)
+          local result = spawnModule:ped(model, coords, heading, options)
+          if streaming then
+            ctx.stream = result
+          else
+            ctx.entity = result
+          end
         elseif spawnConfig.type == 'object' then
-          ctx.entity = spawnModule:object(model, coords, options)
+          local result = spawnModule:object(model, coords, options)
+          if streaming then
+            ctx.stream = result
+          else
+            ctx.entity = result
+          end
         else
           slice.log:warn(('interact(%s): unsupported spawn.type %s'):format(stateKey, tostring(spawnConfig.type)))
         end
@@ -399,7 +429,10 @@ local function buildSlice(name, spec)
           ctx.point:remove()
         end
 
-        if ctx.entity ~= nil and DoesEntityExist(ctx.entity) then
+        if ctx.stream ~= nil and type(ctx.stream.dispose) == 'function' then
+          ctx.stream:dispose()
+          ctx.entity = nil
+        elseif ctx.entity ~= nil and DoesEntityExist(ctx.entity) then
           if NetworkGetEntityIsNetworked(ctx.entity) then
             NetworkRequestControlOfEntity(ctx.entity)
             SetEntityAsMissionEntity(ctx.entity, true, true)
