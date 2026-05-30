@@ -251,8 +251,29 @@ local function registerStreamEntry(kind, model, coords, heading, opts, scopeStat
   return attachDispose(entry)
 end
 
+local function resolveStreamOpts(opts, coords)
+  if opts.spawnOnNear ~= nil then
+    return opts
+  end
+
+  if type(opts.streamRadius) ~= 'number' or opts.streamRadius <= 0 then
+    return opts
+  end
+
+  opts.spawnOnNear = {
+    coords = coords,
+    radius = opts.streamRadius,
+    despawnRadius = opts.despawnRadius,
+    onNear = opts.onNear,
+  }
+
+  return opts
+end
+
 local function spawnPed(model, coords, heading, opts, scopeState)
   opts = opts or {}
+  opts = resolveStreamOpts(opts, coords)
+
   if opts.spawnOnNear ~= nil then
     return registerStreamEntry('ped', model, coords, heading, opts, scopeState)
   end
@@ -262,6 +283,8 @@ end
 
 local function spawnObject(model, coords, opts, scopeState)
   opts = opts or {}
+  opts = resolveStreamOpts(opts, coords)
+
   if opts.spawnOnNear ~= nil then
     return registerStreamEntry('object', model, coords, nil, opts, scopeState)
   end

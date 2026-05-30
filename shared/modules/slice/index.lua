@@ -350,7 +350,15 @@ local function buildSlice(name, spec)
         end
 
         if type(coords) ~= 'vector3' and type(coords) ~= 'table' then
-          error(('[sure_lib][slice] interact(%s): item.%s must be a vector3 or table with x/y/z, got %s (value: %s)'):format(stateKey, spawnCoordsKey, type(coords), tostring(coords)), 2)
+          error(
+            ('[sure_lib][slice] interact(%s): item.%s must be a vector3 or table with x/y/z, got %s (value: %s)'):format(
+              stateKey,
+              spawnCoordsKey,
+              type(coords),
+              tostring(coords)
+            ),
+            2
+          )
         end
 
         local options = nil
@@ -364,14 +372,11 @@ local function buildSlice(name, spec)
         local streaming = type(spawnConfig.streamRadius) == 'number' and spawnConfig.streamRadius > 0
         if streaming then
           options = options or {}
-          options.spawnOnNear = {
-            coords = coords,
-            radius = spawnConfig.streamRadius,
-            despawnRadius = spawnConfig.despawnRadius,
-            onNear = function(streamState)
-              ctx.entity = streamState.handle
-            end,
-          }
+          options.streamRadius = spawnConfig.streamRadius
+          options.despawnRadius = spawnConfig.despawnRadius
+          options.onNear = function(streamState)
+            ctx.entity = streamState.handle
+          end
         end
 
         if spawnConfig.type == 'ped' then
